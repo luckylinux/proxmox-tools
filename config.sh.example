@@ -1,10 +1,24 @@
 #!/bin/bash
 
+##################################################
+############## CONVERSION OPTIONS ################
+##################################################
+
 # Program to copy Blocks (dd or ddrescue)
 PROGRAM_COPY_BLOCKS="ddrescue"
+
+##################################################
+############### BENCHMARK OPTIONS ################
+##################################################
 
 # Test Path
 BENCHMARK_VM_TEST_PATH="/usr/src/stress-io/"
 
 # Guest ID
 BENCHMARK_VM_ID=""
+
+# Default Random Block Size to use when Benchmarking
+BENCHMARK_VM_DEFAULT_RANDOM_BLOCK_SIZE="4K"
+
+# Default Size to write to Disk for the entire Test
+BENCHMARK_VM_DEFAULT_SIZE="10G"
