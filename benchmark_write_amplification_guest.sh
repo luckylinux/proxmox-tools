@@ -18,6 +18,15 @@ run_command_inside_vm() {
     qm guest exec "${BENCHMARK_VM_ID}" --timeout 0 -- /bin/bash -c "${lcmd}"
 }
 
+# Init / Reset Folder
+init_guest_test() {
+   # Remove Folder if it exists
+   rm -rf "${BENCHMARK_VM_TEST_PATH}"
+
+   # Create Folder
+   mkdir -p "${BENCHMARK_VM_TEST_PATH}"
+}
+
 # Random IO Test Function
 random_io() {
     # Input Arguments
@@ -156,6 +165,9 @@ device="${BENCHMARK_HOST_DEVICES[0]}"
 
 # Value before Test
 write_bytes_before_test=$(get_io_statistics_write_bytes "${device}")
+
+# Init Test and Setup Folders
+init_guest_test
 
 # Run Several Tests
 run_command_inside_vm $(random_io "4K")
