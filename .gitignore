@@ -1,2 +1,10 @@
 # Default .gitignore Profile
 .env
+
+data
+data/
+data/**
+
+info
+info/
+info/**

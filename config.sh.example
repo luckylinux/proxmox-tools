@@ -1,3 +1,4 @@
 #!/bin/bash
 
-# Default Configuration
+# Program to copy Blocks (dd or ddrescue)
+program_copy_blocks="ddrescue"
