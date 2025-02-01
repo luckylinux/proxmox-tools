@@ -405,6 +405,11 @@ analyse_host_devices() {
        # If Data is not available, put the same Data as <stat>
        if [[ ${write_bytes_smart} -lt 0 ]]
        then
+           # Echo
+           echo "WARNING: SMART Data for ${device} is NOT Valid (${write_bytes_smart})"
+           echo "WARNING: Setting write_bytes_smart=\${write_bytes_stat}=${write_bytes_stat} (using the same data as <stat>)"
+
+           # Use the same Value as <stat>
            write_bytes_smart="${write_bytes_stat}"
        fi
 
