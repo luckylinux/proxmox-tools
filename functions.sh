@@ -2,6 +2,10 @@
 relativepath="./" # Define relative path to go from this script to the root level of the tool
 if [[ ! -v toolpath ]]; then scriptpath=$(cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd ); toolpath=$(realpath --canonicalize-missing ${scriptpath}/${relativepath}); fi
 
+# Load Configuration
+# shellcheck source=./config.sh
+source "${toolpath}/config.sh"
+
 # Exec Function in Guest
 run_command_inside_vm() {
     # Input Arguments
@@ -14,8 +18,18 @@ run_command_inside_vm() {
 
 # Init / Reset Folder
 init_guest_test() {
-   # Remove Folder if it exists & (Re)Create Folder
-   echo "rm -rf \"${BENCHMARK_VM_TEST_PATH}\"; mkdir -p \"${BENCHMARK_VM_TEST_PATH}\""
+    # Check if Variable is non-empty
+    if [[ -n "${BENCHMARK_VM_TEST_PATH}" ]] && [[ "${BENCHMARK_VM_TEST_PATH}" != "/" ]]
+    then
+        # Remove Folder if it exists & (Re)Create Folder
+        run_command_inside_vm rm -rf "${BENCHMARK_VM_TEST_PATH}"
+
+        # (Re)Create Folder
+        run_command_inside_vm mkdir -p "${BENCHMARK_VM_TEST_PATH}"
+    else
+        echo "ERRRO: Value of ${BENCHMARK_VM_TEST_PATH} in NOT valid !!"
+        exit 9
+    fi
 }
 
 # Random IO Test Function
@@ -208,7 +222,10 @@ run_test_batch() {
     # write_bytes_before_test=$(get_io_statistics_write_bytes "${device}")
 
     # Init Test and Setup Folders
-    run_command_inside_vm $(init_guest_test)
+    init_guest_test
+
+    # Setup Guest Device
+    setup_guest_device
 
     # Run Several Tests
     echo "Writing ${BENCHMARK_VM_DEFAULT_SIZE}GB inside VM"
@@ -224,3 +241,41 @@ run_test_batch() {
     analyse_host_devices write_bytes_host_after_test
 
 }
+
+# Setup Guest Device
+setup_guest_device() {
+    # Input Arguments
+
+    # Flex Groups as fed to mkfs.ext4 -G <#>
+    # HyperV Reccomends 4096 since the Host Block Size on NTFS is quite Big (1MB)
+    local lgroups="$1"
+
+    # Block Size
+    local lbs=${2-""}
+
+    # Make sure to UNMOUNT the Device before starting
+    run_command_inside_vm umount "${BENCHMARK_VM_TEST_DEVICE}"
+
+    # Make Mountpoint Mutable
+    run_command_inside_vm chattr -i "${BENCHMARK_VM_TEST_PATH}"
+
+    # Remove Mountpoint and everything in it (if present)
+    run_command_inside_vm rm -rf "${BENCHMARK_VM_TEST_PATH}"
+
+    # Create Mountpoint
+    run_command_inside_vm mkdir -p "${BENCHMARK_VM_TEST_PATH}"
+
+    # Make Mountpoint Immutable
+    run_command_inside_vm chattr +i "${BENCHMARK_VM_TEST_PATH}"
+
+    # Format Device
+    run_command_inside_vm mkfs.ext4 -F -G "${lgroups}" "${BENCHMARK_VM_TEST_DEVICE}"
+
+    # Mount Device
+    run_command_inside_vm mount "${BENCHMARK_VM_TEST_DEVICE}" "${BENCHMARK_VM_TEST_PATH}"
+}
+
+# Benchmark Random IO
+
+
+# Benchmark Throughput IO

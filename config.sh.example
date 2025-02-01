@@ -14,6 +14,9 @@ PROGRAM_COPY_BLOCKS="ddrescue"
 # Test Path
 BENCHMARK_VM_TEST_PATH="/usr/src/stress-io/"
 
+# Test Device
+BENCHMARK_VM_TEST_DEVICE="/dev/disk/by-id/XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+
 # Guest ID
 BENCHMARK_VM_ID=""
 
