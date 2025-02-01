@@ -363,6 +363,9 @@ analyse_guest_device() {
    # Echo
    echo "Analyse Guest Device"
 
+   # Define Device
+   device="${BENCHMARK_VM_TEST_DEVICE}"
+
    #for device in "${BENCHMARK_VM_TEST_DEVICE[@]}"
    #do
        # Get Value (get_io_statistics_write_bytes already runs the command inside the VM if desired)
