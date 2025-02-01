@@ -44,7 +44,7 @@ get_io_statistics() {
     # Input Arguments
     local ldev="$1"
 
-    if [ "${ldev}" == "/dev/disk/by-id/"* ] || [ "${ldev}" == "/dev/mapper/"* ] || [ "${ldev}" == "/dev/loop/"* ]
+    if [[ "${ldev}" == "/dev/disk/by-id/"* ]] || [[ "${ldev}" == "/dev/mapper/"* ]] || [[ "${ldev}" == "/dev/loop/"* ]]
     then
         # Get the simplified Name that we can look in /sys/block/<dev>/stat
         ldev=$(basename $(readlink "${ldev}"))
