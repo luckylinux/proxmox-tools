@@ -100,7 +100,7 @@ run_command_inside_vm() {
 
     # Run Command inside VM
     local cmd_returned_value
-    cmd_returned_value=$(qm guest exec "${BENCHMARK_VM_ID}" --timeout 0 -- /bin/bash -c "${lcmd}")
+    cmd_returned_value=$(qm guest exec "${BENCHMARK_VM_ID}" --timeout 0 -- /bin/bash -c "${lcmd} > /dev/null 2>&1")
 
     # Return Value (JSON)
     echo "${cmd_returned_value}"
@@ -404,11 +404,15 @@ run_test_iteration() {
     then
         # Run Benchmark and store Return Value in Variable
         cmd_string=$(random_io "${lblocksize}" "${lqueudepth}")
+        echo "Running Command String: ${cmd_string}"
+        run_command_inside_vm "${cmd_string}"
         cmd_return_value=$(run_command_inside_vm "${cmd_string}")
     elif [[ "${ltype}" == "throughput" ]]
     then
         # Run Benchmark and store Return Value in Variable
         cmd_string=$(throughput_io "${lblocksize}" "${lqueudepth}")
+        echo "Running Command String: ${cmd_string}"
+        run_command_inside_vm "${cmd_string}"
         cmd_return_value=$(run_command_inside_vm "${cmd_string}")
     else
         # Echo
