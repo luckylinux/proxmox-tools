@@ -371,8 +371,12 @@ run_test_iteration() {
     # Value before Test
     # write_bytes_before_test=$(get_io_statistics_write_bytes "${device}")
 
-    # Init Test and Setup Folders
-    init_guest_test
+    # Init Test
+    # (ONLY if **NOT** using a Separate Device)
+    if [[ -z "${BENCHMARK_VM_TEST_DEVICE}" ]]
+    then
+        init_guest_test
+    fi
 
     # Setup Guest Device
     setup_guest_device "${flex_group}"
@@ -419,9 +423,9 @@ setup_guest_device() {
     # local lbs=${2-""}
 
     # Make sure to UNMOUNT the Device before starting
-    run_command_inside_vm umount "${BENCHMARK_VM_TEST_DEVICE}"
+    run_command_inside_vm bash -c "if mountpoint -q "${BENCHMARK_VM_TEST_DEVICE}; then umount \"${BENCHMARK_VM_TEST_DEVICE}\"; done"
 
-    # Make Mountpoint Mutable
+    # Make Mountpoint Mutable (again)
     run_command_inside_vm chattr -i "${BENCHMARK_VM_TEST_PATH}"
 
     # Remove Mountpoint and everything in it (if present)
