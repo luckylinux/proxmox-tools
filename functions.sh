@@ -544,7 +544,7 @@ run_test_iteration() {
     echo -e "\n"
 
     # Analyse Host Devices before Test
-    analyse_host_devices write_bytes_host_stat_before_test write_bytes_smart_host_before_test
+    analyse_host_devices write_bytes_stat_host_before_test write_bytes_smart_host_before_test
 
     # Vertical Space
     echo -e "\n\n"
