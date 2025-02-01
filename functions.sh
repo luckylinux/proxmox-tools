@@ -189,6 +189,8 @@ get_smart_written_bytes() {
    # Declare Local Variables
    local lattributes
    local linformation
+   local lbas_written
+   local lba_size
 
    # Read all Attributes
    lattributes=$(smartctl --attributes "${ldev}")
@@ -200,11 +202,11 @@ get_smart_written_bytes() {
    lbas_written=$(echo "${lattributes}" | grep "${LBAS_WRITTEN_TAG}" | awk '{print $10}')
 
    # Get Sector Size
-   lba_size=$(echo "${linformation}" | grep "Sector Sizes" | sed -E "s|Sector Sizes:     ([0-9]+) bytes logical, ([0-9]+) bytes physical|\1|g")
+   lba_size=$(echo "${linformation}" | grep "Sector Sizes" | sed -E "s|Sector Sizes:\s*?([0-9]+) bytes logical, ([0-9]+) bytes physical|\1|g")
 
    # Debug
-   echo "Attributes: ${attributes}"
-   echo "Information: ${information}"
+   echo "Attributes: ${lattributes}"
+   echo "Information: ${linformation}"
    echo "LBAS Written: ${lbas_written}"
    echo "LBA Size: ${lba_size}"
 
