@@ -691,6 +691,9 @@ setup_guest_device() {
     # Block Size
     # local lblocksize=${2-""}
 
+    # Make sure to kill all <fio> Processes before starting
+    run_command_inside_vm "killall fio; killall fio; killall fio;" > /dev/null 2>&1
+
     # Make sure to UNMOUNT the Device before starting
     run_command_inside_vm "if mountpoint -q \"${BENCHMARK_VM_TEST_PATH}\"; then umount \"${BENCHMARK_VM_TEST_PATH}\"; fi" > /dev/null 2>&1
 
