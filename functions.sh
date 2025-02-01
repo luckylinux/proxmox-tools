@@ -386,7 +386,7 @@ analyse_host_devices() {
    # The return Array is passed by nameref
    # Reference to output array
    declare -n lreturnarray_stat="${1}"
-   declare -n lreturnarray_smart="${1}"
+   declare -n lreturnarray_smart="${2}"
 
    # Echo
    echo "Analyse Host Devices"
