@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# Determine toolpath if not set already
+relativepath="./" # Define relative path to go from this script to the root level of the tool
+if [[ ! -v toolpath ]]; then scriptpath=$(cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd ); toolpath=$(realpath --canonicalize-missing ${scriptpath}/${relativepath}); fi
+
 ##################################################
 ############## CONVERSION OPTIONS ################
 ##################################################
@@ -16,6 +20,12 @@ BENCHMARK_VM_TEST_PATH="/usr/src/stress-io/"
 
 # Test Device
 BENCHMARK_VM_TEST_DEVICE="/dev/disk/by-id/XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+
+# Timestamp
+BENCHMARK_TIMESTAMP=$(date +"%Y%m%d-%H%M%S")
+
+# Folder where to save Information about the Original ZVOL
+BENCHMARK_RESULTS_FOLDER="${toolpath}/data/${BENCHMARK_TIMESTAMP}"
 
 # Guest ID
 BENCHMARK_VM_ID=""
