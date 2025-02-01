@@ -369,7 +369,7 @@ analyse_guest_device() {
    #for device in "${BENCHMARK_VM_TEST_DEVICE[@]}"
    #do
        # Test Standalone Command to see what's happening
-       get_io_statistics "${ldevice}" "remote"
+       # get_io_statistics "${ldevice}" "remote"
 
        # Get Value (get_io_statistics_write_bytes already runs the command inside the VM if desired)
        write_bytes=$(get_io_statistics_write_bytes "${ldevice}" "remote")
@@ -522,12 +522,24 @@ run_test_iteration() {
     analyse_guest_device write_bytes_guest_after_test
 
     # Calculate Difference on Guest
-    
+
+    # Before
+    before_value_guest=${write_bytes_guest_before_test[0]}
+
+    # After
+    after_value_guest=${write_bytes_guest_after_test[0]}
+
+    # Delta
+    delta_value_guest=$((${after_value_guest} - ${before_value_guest}))
+
 
     # Calculate Difference on Host
     number_items=${#write_bytes_host_after_test[@]}
     for index in $(seq 0 $((${number_items}-1)))
     do
+        # Host Device
+        device_host="${BENCHMARK_HOST_DEVICES[$index]}"
+
         # Before
         before_value_host=${write_bytes_host_before_test[${index}]}
 
@@ -537,7 +549,11 @@ run_test_iteration() {
         # Delta
         delta_value_host=$((${after_value_host} - ${before_value_host}))
 
-        # Ca
+        # Calculate Write Amplification
+        write_amplification_factor=$(echo "scale=3; ${delta_value_host} / ${delta_value_guest}" | bc)
+
+        # Echo
+        echo -e "Write Amplification from GUEST to HOST [${device_host}]: ${write_amplification_factor}"
     done
 
     # Vertical Space
