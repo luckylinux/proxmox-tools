@@ -101,7 +101,8 @@ run_command_inside_vm() {
     # Run Command inside VM
     local cmd_returned_value
     # cmd_returned_value=$(qm guest exec "${BENCHMARK_VM_ID}" --timeout 0 -- /bin/bash -c "${lcmd} > /dev/null 2>&1")
-    cmd_returned_value=$(qm guest exec "${BENCHMARK_VM_ID}" --timeout 0 -- /bin/bash -c "${lcmd}" > /dev/null 2>&1)
+    # cmd_returned_value=$(qm guest exec "${BENCHMARK_VM_ID}" --timeout 0 -- /bin/bash -c "${lcmd}" > /dev/null 2>&1)
+    cmd_returned_value=$(qm guest exec "${BENCHMARK_VM_ID}" --timeout 0 -- /bin/bash -c "${lcmd}")
 
     # Return Value (JSON)
     echo "${cmd_returned_value}"
@@ -549,26 +550,26 @@ setup_guest_device() {
     # local lblocksize=${2-""}
 
     # Make sure to UNMOUNT the Device before starting
-    run_command_inside_vm "if mountpoint -q \"${BENCHMARK_VM_TEST_PATH}\"; then umount \"${BENCHMARK_VM_TEST_PATH}\"; fi"
+    run_command_inside_vm "if mountpoint -q \"${BENCHMARK_VM_TEST_PATH}\"; then umount \"${BENCHMARK_VM_TEST_PATH}\"; fi" > /dev/null 2>&1
 
     # Make sure to UNMOUNT the Device before starting
-    run_command_inside_vm "device_short_name=$(readlink \"${BENCHMARK_VM_TEST_DEVICE}\"); if [[ $(cat /proc/mounts | grep \"${device_short_name}\" | wc -l) -ge 1 ]]; then umount \"${BENCHMARK_VM_TEST_DEVICE}\"; fi"
+    run_command_inside_vm "device_short_name=$(readlink \"${BENCHMARK_VM_TEST_DEVICE}\"); if [[ $(cat /proc/mounts | grep \"${device_short_name}\" | wc -l) -ge 1 ]]; then umount \"${BENCHMARK_VM_TEST_DEVICE}\"; fi" > /dev/null 2>&1
 
     # Make Mountpoint Mutable (again)
-    run_command_inside_vm "if [[ -d \"${BENCHMARK_VM_TEST_PATH}\" ]]; then chattr -i \"${BENCHMARK_VM_TEST_PATH}\"; fi"
+    run_command_inside_vm "if [[ -d \"${BENCHMARK_VM_TEST_PATH}\" ]]; then chattr -i \"${BENCHMARK_VM_TEST_PATH}\"; fi" > /dev/null 2>&1
 
     # Remove Mountpoint and everything in it (if present)
-    run_command_inside_vm rm -rf "${BENCHMARK_VM_TEST_PATH}"
+    run_command_inside_vm rm -rf "${BENCHMARK_VM_TEST_PATH}" > /dev/null 2>&1
 
     # Create Mountpoint
-    run_command_inside_vm mkdir -p "${BENCHMARK_VM_TEST_PATH}"
+    run_command_inside_vm mkdir -p "${BENCHMARK_VM_TEST_PATH}" > /dev/null 2>&1
 
     # Make Mountpoint Immutable
-    run_command_inside_vm chattr +i "${BENCHMARK_VM_TEST_PATH}"
+    run_command_inside_vm chattr +i "${BENCHMARK_VM_TEST_PATH}" > /dev/null 2>&1
 
     # Format Device
-    run_command_inside_vm mkfs.ext4 -F -G "${lgroups}" "${BENCHMARK_VM_TEST_DEVICE}"
+    run_command_inside_vm mkfs.ext4 -F -G "${lgroups}" "${BENCHMARK_VM_TEST_DEVICE}" > /dev/null 2>&1
 
     # Mount Device
-    run_command_inside_vm mount "${BENCHMARK_VM_TEST_DEVICE}" "${BENCHMARK_VM_TEST_PATH}"
+    run_command_inside_vm mount "${BENCHMARK_VM_TEST_DEVICE}" "${BENCHMARK_VM_TEST_PATH}" > /dev/null 2>&1
 }
