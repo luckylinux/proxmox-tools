@@ -223,6 +223,9 @@ get_smart_written_bytes() {
 
        # Return Value
        echo "${bytes_written}"
+   else
+       # Return dummy Value to be processed later
+       echo "-1"
    fi
 }
 
@@ -398,6 +401,12 @@ analyse_host_devices() {
 
        # Get Value using Smartmontools
        write_bytes_smart=$(get_smart_written_bytes "${device}")
+
+       # If Data is not available, put the same Data as <stat>
+       if [[ ${write_bytes_smart} -lt 0 ]]
+       then
+           write_bytes_smart="${write_bytes_stat}"
+       fi
 
        # Convert to gigabytes
        write_gigabytes_smart=$(convert_bytes_to_gigabytes "${write_bytes_smart}")
