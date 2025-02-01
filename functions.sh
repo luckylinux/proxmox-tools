@@ -14,6 +14,9 @@ run_command_inside_vm() {
     # Run Command inside VM
     local cmd_returned_value
     cmd_returned_value=$(qm guest exec "${BENCHMARK_VM_ID}" --timeout 0 -- /bin/bash -c "${lcmd}")
+
+    # Return Value (JSON)
+    echo "${cmd_returned_value}"
 }
 
 # Init / Reset Folder
@@ -43,7 +46,7 @@ random_io() {
 }
 
 # Throuput Test Function
-throuput_io() {
+throughput_io() {
     # Input Arguments
     local lbs=${1-"${BENCHMARK_VM_DEFAULT_RANDOM_BLOCK_SIZE}"}
     local lsize=${2-"${BENCHMARK_VM_DEFAULT_SIZE}"}
@@ -212,6 +215,56 @@ analyse_host_devices() {
 
 # Run Standard Test Batch
 run_test_batch() {
+    # For each Group passed on to mkfs.ext4 -G <#>
+    for flex_group in "${BENCHMARK_VM_MKFS_EXT4_GROUPS[@]}"
+    do
+        # Echo
+        echo "Using flex_group = ${flex_group} for mkfs.ext4 -G"
+
+
+        # Perform Random IO Testing
+        for random_block_size in "${BENCHMARK_VM_FIO_RANDOM_BLOCK_SIZE[@]}"
+        do
+            # Echo
+            echo "Using random_block_size = ${random_block_size} for fio"
+
+            for random_queue_depth in "${BENCHMARK_VM_FIO_RANDOM_QUEUE_DEPTH[@]}"
+            do
+                # Echo
+                echo "Using random_queue_depth = ${random_queue_depth} for fio"
+
+                # Run Benchmark
+                run_test_iteration "${flex_group}" "random" "${random_block_size}" "${random_queue_depth}"
+            done
+
+        done
+
+        # Perform Throughput IO Testing
+        for throughput_block_size in "${BENCHMARK_VM_FIO_THROUGHPUT_BLOCK_SIZE[@]}"
+        do
+            # Echo
+            echo "Using throughput_block_size = ${throughput_block_size} for fio"
+
+            for throughput_queue_depth in "${BENCHMARK_VM_FIO_THROUGHPUT_QUEUE_DEPTH[@]}"
+            do
+                # Echo
+                echo "Using throughput_queue_depth = ${throughput_queue_depth} for fio"
+
+                # Run Benchmark
+                run_test_iteration "${flex_group}" "throughput" "${throughput_block_size}" "${throughput_queue_depth}"
+            done
+        done
+    done
+}
+
+# Run Test Iteration
+run_test_iteration() {
+    # Input Arguments
+    local lgroups="$1"
+    local ltype="$2"
+    local lblocksize="$3"
+    local lqueuedepth="$4"
+
     # Declare write_bytes_host_before_test as a (global) array that we will pass to analyse_host_devices() by reference
     declare -a write_bytes_host_before_test
 
@@ -225,11 +278,27 @@ run_test_batch() {
     init_guest_test
 
     # Setup Guest Device
-    setup_guest_device
+    setup_guest_device "${flex_group}"
 
-    # Run Several Tests
+    # Run Benchmark inside VM
     echo "Writing ${BENCHMARK_VM_DEFAULT_SIZE}GB inside VM"
-    run_command_inside_vm $(random_io "4K")
+
+    # Decide whether to run Random IO or Throughput IO Benchmark
+    if [[ "${ltype}" == "random" ]]
+    then
+        # Run Benchmark and store Return Value in Variable
+        cmd_return_value=$(run_command_inside_vm $(random_io "${lblocksize}" "${lqueudepth}"))
+    elif [[ "${ltype}" == "throughput" ]]
+    then
+        # Run Benchmark and store Return Value in Variable
+        cmd_return_value=$(run_command_inside_vm $(throughput_io "${lblocksize}" "${lqueudepth}"))
+    else
+        # Echo
+        echo "ERROR: Benchmark Type ${ltype} is NOT supported. Valid Choices are: [random, thoughput]. Aborting."]
+
+        # Abort
+        exit 9
+    fi
 
     # Value after Test
     # write_bytes_after_test=$(get_io_statistics_write_bytes "${device}")
@@ -239,7 +308,6 @@ run_test_batch() {
 
     # Analyse Host Devices after Test
     analyse_host_devices write_bytes_host_after_test
-
 }
 
 # Setup Guest Device
@@ -251,7 +319,7 @@ setup_guest_device() {
     local lgroups="$1"
 
     # Block Size
-    local lbs=${2-""}
+    # local lbs=${2-""}
 
     # Make sure to UNMOUNT the Device before starting
     run_command_inside_vm umount "${BENCHMARK_VM_TEST_DEVICE}"
@@ -274,8 +342,3 @@ setup_guest_device() {
     # Mount Device
     run_command_inside_vm mount "${BENCHMARK_VM_TEST_DEVICE}" "${BENCHMARK_VM_TEST_PATH}"
 }
-
-# Benchmark Random IO
-
-
-# Benchmark Throughput IO

@@ -12,6 +12,5 @@ source "${toolpath}/config.sh"
 # Load Functions
 source "${toolpath}/functions.sh"
 
-# Just Analyse the first Host Device
-# device="${BENCHMARK_HOST_DEVICES[0]}"
-
+# Run Test Batch
+run_test_batch
