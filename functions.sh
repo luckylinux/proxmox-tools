@@ -403,10 +403,12 @@ run_test_iteration() {
     if [[ "${ltype}" == "random" ]]
     then
         # Run Benchmark and store Return Value in Variable
+        run_command_inside_vm random_io "${lblocksize}" "${lqueudepth}"
         cmd_return_value=$(run_command_inside_vm random_io "${lblocksize}" "${lqueudepth}")
     elif [[ "${ltype}" == "throughput" ]]
     then
         # Run Benchmark and store Return Value in Variable
+        run_command_inside_vm throughput_io "${lblocksize}" "${lqueudepth}"
         cmd_return_value=$(run_command_inside_vm throughput_io "${lblocksize}" "${lqueudepth}")
     else
         # Echo
