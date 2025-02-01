@@ -202,10 +202,18 @@ get_io_statistics() {
         fi
     elif [[ "${lmode}" == "remote" ]]
     then
-       # Run Command on VM
+       # Define Command String to run in VM
        # lcmd_string="ldev=$(basename $(readlink --canonicalize \"\${ldev}\"); if [[ -e \"/sys/block/${ldev}\" ]]; then cat \"/sys/block/${ldev}/stat\"); fi"
        lcmd_string="if [[ -L \"${ldev}\" ]]; then ldev=\$(basename \$(readlink --canonicalize \"${ldev}\")); fi; if [[ -e \"/sys/block/${ldev}\" ]]; then cat \"/sys/block/${ldev}/stat\"); fi"
+
+       # Echo
+       echo "Run Command inside VM: ${lcmd_string}"
+
+       # Run Command in VM
        lcmd_return_value=$(run_command_inside_vm "${lcmd_string}")
+
+       # Echo
+       echo "Run Command on Host: echo ${lcmd_return_value} | jq -r '.\"out-data\"'"
 
        # Return Result from Inside
        echo ${lcmd_return_value} | jq -r '."out-data"'
