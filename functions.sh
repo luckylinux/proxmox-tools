@@ -100,7 +100,8 @@ run_command_inside_vm() {
 
     # Run Command inside VM
     local cmd_returned_value
-    cmd_returned_value=$(qm guest exec "${BENCHMARK_VM_ID}" --timeout 0 -- /bin/bash -c "${lcmd} > /dev/null 2>&1")
+    # cmd_returned_value=$(qm guest exec "${BENCHMARK_VM_ID}" --timeout 0 -- /bin/bash -c "${lcmd} > /dev/null 2>&1")
+    cmd_returned_value=$(qm guest exec "${BENCHMARK_VM_ID}" --timeout 0 -- /bin/bash -c "${lcmd}" > /dev/null 2>&1)
 
     # Return Value (JSON)
     echo "${cmd_returned_value}"
@@ -180,17 +181,39 @@ convert_bytes_to_gigabytes() {
 get_io_statistics() {
     # Input Arguments
     local ldev="$1"
+    local lmode=${2-"local"}
 
-    if [[ "${ldev}" == "/dev/disk/by-id/"* ]] || [[ "${ldev}" == "/dev/mapper/"* ]] || [[ "${ldev}" == "/dev/loop/"* ]]
-    then
-        # Get the simplified Name that we can look in /sys/block/<dev>/stat
-        ldev=$(basename $(readlink "${ldev}"))
-    fi
+    # Declare Variables
+    local lcmd_string
+    local lcmd_return_value
 
-    # Return Value
-    if [[ -e "/sys/block/${ldev}" ]]
+    if [[ "${}" == "local" ]]
     then
-        cat "/sys/block/${ldev}/stat"
+        if [[ "${ldev}" == "/dev/disk/by-id/"* ]] || [[ "${ldev}" == "/dev/mapper/"* ]] || [[ "${ldev}" == "/dev/loop/"* ]]
+        then
+            # Get the simplified Name that we can look in /sys/block/<dev>/stat
+            ldev=$(basename $(readlink "${ldev}"))
+        fi
+
+        # Return Value
+        if [[ -e "/sys/block/${ldev}" ]]
+        then
+            cat "/sys/block/${ldev}/stat"
+        fi
+    elif
+       # Run Command on VM
+       # lcmd_string="ldev=$(basename $(readlink --canonicalize \"\${ldev}\"); if [[ -e \"/sys/block/${ldev}\" ]]; then cat \"/sys/block/${ldev}/stat\"); fi"
+       lcmd_string="if [[ -L \"${ldev}\" ]]; then ldev=\$(basename \$(readlink --canonicalize \"${ldev}\")); fi; if [[ -e \"/sys/block/${ldev}\" ]]; then cat \"/sys/block/${ldev}/stat\"); fi"
+       lcmd_return_value=$(run_command_on_vm "${lcmd_string}")
+
+       # Return Result from Inside
+       echo ${lcmd_return_value} | jq -r '."out-data"'
+    else
+        # Echo
+        echo "ERROR: Mode ${lmode} is NOT supported. Mode must be one of: [local,remote]. Aborting"
+
+        # Abort
+        exit 9
     fi
 }
 
@@ -199,9 +222,10 @@ get_io_statistics() {
 get_io_statistics_read_ios() {
    # Input Arguments
    local ldev="$1"
+   local lmode=${2-"local"}
 
    # Return Value
-   echo $(get_io_statistics "${ldev}") | awk '{print $1}'
+   echo $(get_io_statistics "${ldev}" "${lmode}") | awk '{print $1}'
 }
 
 # Get IO Statistics Data (Read Merges)
@@ -209,9 +233,10 @@ get_io_statistics_read_ios() {
 get_io_statistics_read_merges() {
    # Input Arguments
    local ldev="$1"
+   local lmode=${2-"local"}
 
    # Return Value
-   echo $(get_io_statistics "${ldev}") | awk '{print $2}'
+   echo $(get_io_statistics "${ldev}" "${lmode}") | awk '{print $2}'
 }
 
 # Get IO Statistics Data (Read Sectors)
@@ -219,9 +244,10 @@ get_io_statistics_read_merges() {
 get_io_statistics_read_sectors() {
    # Input Arguments
    local ldev="$1"
+   local lmode=${2-"local"}
 
    # Return Value
-   echo $(get_io_statistics "${ldev}") | awk '{print $3}'
+   echo $(get_io_statistics "${ldev}" "${lmode}") | awk '{print $3}'
 }
 
 # Get IO Statistics Data (Read Ticks)
@@ -229,9 +255,10 @@ get_io_statistics_read_sectors() {
 get_io_statistics_read_ticks() {
    # Input Arguments
    local ldev="$1"
+   local lmode=${2-"local"}
 
    # Return Value
-   echo $(get_io_statistics "${ldev}") | awk '{print $4}'
+   echo $(get_io_statistics "${ldev}" "${lmode}") | awk '{print $4}'
 }
 
 # Get IO Statistics Data (Write IOs)
@@ -239,9 +266,10 @@ get_io_statistics_read_ticks() {
 get_io_statistics_write_ios() {
    # Input Arguments
    local ldev="$1"
+   local lmode=${2-"local"}
 
    # Return Value
-   echo $(get_io_statistics "${ldev}") | awk '{print $5}'
+   echo $(get_io_statistics "${ldev}" "${lmode}") | awk '{print $5}'
 }
 
 # Get IO Statistics Data (Write Merges)
@@ -249,9 +277,10 @@ get_io_statistics_write_ios() {
 get_io_statistics_write_merges() {
    # Input Arguments
    local ldev="$1"
+   local lmode=${2-"local"}
 
    # Return Value
-   echo $(get_io_statistics "${ldev}") | awk '{print $6}'
+   echo $(get_io_statistics "${ldev}" "${lmode}") | awk '{print $6}'
 }
 
 # Get IO Statistics Data (Write Sectors)
@@ -259,9 +288,10 @@ get_io_statistics_write_merges() {
 get_io_statistics_write_sectors() {
    # Input Arguments
    local ldev="$1"
+   local lmode=${2-"local"}
 
    # Return Value
-   echo $(get_io_statistics "${ldev}") | awk '{print $7}'
+   echo $(get_io_statistics "${ldev}" "${lmode}") | awk '{print $7}'
 }
 
 # Get IO Statistics Data (Write Ticks)
@@ -269,9 +299,10 @@ get_io_statistics_write_sectors() {
 get_io_statistics_write_ticks() {
    # Input Arguments
    local ldev="$1"
+   local lmode=${2-"local"}
 
    # Return Value
-   echo $(get_io_statistics "${ldev}") | awk '{print $8}'
+   echo $(get_io_statistics "${ldev}" "${lmode}") | awk '{print $8}'
 }
 
 # Get IO Statistics Data (Write Sectors are "standardized" 512b, indipendent of FS Block/Sector Size)
@@ -279,31 +310,61 @@ get_io_statistics_write_ticks() {
 get_io_statistics_write_bytes() {
    # Input Arguments
    local ldev="$1"
+   local lmode=${2-"local"}
 
    # Get Number of Sectors written
-   sectors=$(get_io_statistics_write_sectors "${ldev}")
+   sectors=$(get_io_statistics_write_sectors "${ldev}" "${lmode}")
 
    # Calculate Bytes Value
    echo "${sectors} * 512" | bc
 }
 
-# Analyze Devices
+# Analyze Host Device
 analyse_host_devices() {
    # The return Array is passed by nameref
    # Reference to output array
    declare -n lreturnarray="${1}"
 
+   # Echo
+   echo "Analyse Host Devices"
+
    for device in "${BENCHMARK_HOST_DEVICES[@]}"
    do
        # Get Value
-       write_bytes=$(get_io_statistics_write_bytes "${device}")
+       write_bytes=$(get_io_statistics_write_bytes "${device}" "local")
 
        # Store in Return Array
        lreturnarray+=("${write_bytes}")
 
        # Echo
-       echo "Write Bytes for Device ${device}: ${write_bytes}"
+       echo "[HOST] Write Bytes for Device ${device}: ${write_bytes}"
    done
+}
+
+# Analyze Guest Device
+analyse_guest_device() {
+   # The return Array is passed by nameref
+   # Reference to output array
+   declare -n lreturnarray="${1}"
+
+   # Declare local Variables
+   local lcmd_string
+
+   # Echo
+   echo "Analyse Guest Device"
+
+   #for device in "${BENCHMARK_VM_TEST_DEVICE[@]}"
+   #do
+       # Get Value
+       lcmd_string=$(get_io_statistics_write_bytes "${device}" "remote")
+       write_bytes=$(run_command_on_vm "${lcmd_string}")
+
+       # Store in Return Array
+       lreturnarray+=("${write_bytes}")
+
+       # Echo
+       echo "[GUEST] Write Bytes for Device ${device}: ${write_bytes}"
+   #done
 }
 
 # Run Standard Test Batch
@@ -375,6 +436,10 @@ run_test_iteration() {
 
     # Declare write_bytes_host_before_test as a (global) array that we will pass to analyse_host_devices() by reference
     declare -a write_bytes_host_before_test
+    declare -a write_bytes_guest_before_test
+
+    # Analyse Guest Devices before Test
+    analyse_guest_device write_bytes_guest_before_test
 
     # Analyse Host Devices before Test
     analyse_host_devices write_bytes_host_before_test
@@ -433,9 +498,32 @@ run_test_iteration() {
 
     # Declare write_bytes_host_before_test as a (global) array that we will pass to analyse_host_devices() by reference
     declare -a write_bytes_host_after_test
+    declare -a write_bytes_guest_after_test
 
     # Analyse Host Devices after Test
     analyse_host_devices write_bytes_host_after_test
+
+    # Analyze Guest Device after Test
+    analyse_guest_device write_bytes_guest_after_test
+
+    # Calculate Difference on Guest
+    
+
+    # Calculate Difference on Host
+    number_items=${#write_bytes_host_after_test[@]}
+    for index in $(seq 0 $((${number_items}-1)))
+    do
+        # Before
+        before_value_host=${write_bytes_host_before_test[${index}]}
+
+        # After
+        after_value_host=${write_bytes_host_after_test[${index}]}
+
+        # Delta
+        delta_value_host=$((${after_value_host} - ${before_value_host}))
+
+        # Ca
+    done
 
     # Vertical Space
     echo -e "\n\n"
