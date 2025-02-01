@@ -6,6 +6,10 @@ if [[ ! -v toolpath ]]; then scriptpath=$(cd "$( dirname "${BASH_SOURCE[0]}" )" 
 # shellcheck source=./config.sh
 source "${toolpath}/config.sh"
 
+# Load Constants
+# shellcheck source=./constants.sh
+source "${toolpath}/constants.sh"
+
 # Repeat Character N times
 repeat_character() {
    # Character to repeat
@@ -177,6 +181,44 @@ convert_bytes_to_gigabytes() {
    echo "${lgigabytes}" | sed ':a;s/\B[0-9]\{3\}\>/,&/;ta'
 }
 
+# Get Smartctl LBA Written Bytes Data
+get_smart_written_bytes() {
+   # Input Arguments
+   local ldev="$1"
+
+   # Declare Local Variables
+   local lattributes
+   local linformation
+
+   # Read all Attributes
+   lattributes=$(smartctl --attributes /dev/disk/by-id/${disk})
+
+   # Read all Information
+   linformation=$(smartctl --attributes /dev/disk/by-id/${disk})
+
+
+   # Get Written LBAs
+   lbas_written=$(echo "${lattributes}" | grep "${LBAS_WRITTEN_TAG}" | awk '{print $10}')
+
+   # Get Sector Size
+   lba_size=$(echo "${linformation}" | grep "Sector Sizes" | sed -E "s|Sector Sizes:     ([0-9]+) bytes logical, ([0-9]+) bytes physical|\1|g")
+
+   # Debug
+   # echo "Attributes: ${attributes}"
+   # echo "LBAS Written: ${lbas_written}"
+
+   # Convert LBAs -> bytes
+   bytes_written=$(echo "${lbas_written} * ${lba_size}" | bc)
+
+   # Convert into bigger Units
+   # megabytes_written=$(echo "scale=3; ${bytes_written} / ${BYTES_PER_MB}" | bc)
+   # gigabytes_written=$(echo "scale=3; ${bytes_written} / ${BYTES_PER_GB}" | bc)
+   # terabytes_written=$(echo "scale=3; ${bytes_written} / ${BYTES_PER_TB}" | bc)
+
+   # Return Value
+   echo "${bytes_written}"
+}
+
 # Get IO Statistics Data
 # https://www.kernel.org/doc/Documentation/block/stat.txt
 get_io_statistics() {
@@ -333,21 +375,38 @@ get_io_statistics_write_bytes() {
 analyse_host_devices() {
    # The return Array is passed by nameref
    # Reference to output array
-   declare -n lreturnarray="${1}"
+   declare -n lreturnarray_stat="${1}"
+   declare -n lreturnarray_smart="${1}"
 
    # Echo
    echo "Analyse Host Devices"
 
    for device in "${BENCHMARK_HOST_DEVICES[@]}"
    do
-       # Get Value
-       write_bytes=$(get_io_statistics_write_bytes "${device}" "local")
+       # Get Value using Linux Kernel Statistics
+       write_bytes_stat=$(get_io_statistics_write_bytes "${device}" "local")
+
+       # Convert to gigabytes
+       write_gigabytes_stat=$(convert_bytes_to_gigabytes "${write_bytes_stat}")
+
+       # Get Value using Smartmontools
+       write_bytes_smart=$(get_smart_written_bytes "${device}")
+
+       # Convert to gigabytes
+       write_gigabytes_smart=$(convert_bytes_to_gigabytes "${write_bytes_smart}")
+
+       # Select which Value to use
+       # write_bytes="${write_bytes_stat}"
 
        # Store in Return Array
-       lreturnarray+=("${write_bytes}")
+       lreturnarray_stat+=("${write_bytes_stat}")
+       lreturnarray_smart+=("${write_bytes_smart}")
 
        # Echo
-       echo "[HOST] Write Bytes for Device ${device}: ${write_bytes}"
+       echo "[HOST] Write Bytes for Device using Linux Kernel Statistics for ${device}: ${write_bytes_stat} B (${write_gigabytes_stat} GB)"
+
+       # Echo
+       echo "[HOST] Write Bytes for Device using smartmontools for ${device}: ${write_bytes_smart} B (${write_gigabytes_smart} GB)"
    done
 }
 
@@ -374,11 +433,14 @@ analyse_guest_device() {
        # Get Value (get_io_statistics_write_bytes already runs the command inside the VM if desired)
        write_bytes=$(get_io_statistics_write_bytes "${ldevice}" "remote")
 
+       # Convert to gigabytes
+       write_gigabytes=$(convert_bytes_to_gigabytes "${write_bytes}")
+
        # Store in Return Array
        lreturnarray+=("${write_bytes}")
 
        # Echo
-       echo "[GUEST] Write Bytes for Device ${device}: ${write_bytes}"
+       echo "[GUEST] Write Bytes for Device ${device}: ${write_bytes} B (${write_gigabytes} GB)"
    #done
 }
 
@@ -450,7 +512,8 @@ run_test_iteration() {
     echo -e "\n\n"
 
     # Declare write_bytes_host_before_test as a (global) array that we will pass to analyse_host_devices() by reference
-    declare -a write_bytes_host_before_test
+    declare -a write_bytes_stat_host_before_test
+    declare -a write_bytes_smart_host_before_test
     declare -a write_bytes_guest_before_test
 
     # Analyse Guest Devices before Test
@@ -460,7 +523,7 @@ run_test_iteration() {
     echo -e "\n"
 
     # Analyse Host Devices before Test
-    analyse_host_devices write_bytes_host_before_test
+    analyse_host_devices write_bytes_host_stat_before_test write_bytes_smart_host_before_test
 
     # Vertical Space
     echo -e "\n\n"
@@ -518,11 +581,12 @@ run_test_iteration() {
     # write_bytes_after_test=$(get_io_statistics_write_bytes "${device}")
 
     # Declare write_bytes_host_before_test as a (global) array that we will pass to analyse_host_devices() by reference
-    declare -a write_bytes_host_after_test
+    declare -a write_bytes_stat_host_after_test
+    declare -a write_bytes_smart_host_after_test
     declare -a write_bytes_guest_after_test
 
     # Analyse Host Devices after Test
-    analyse_host_devices write_bytes_host_after_test
+    analyse_host_devices write_bytes_stat_host_after_test write_bytes_smart_host_after_test
 
     # Vertical Space
     echo -e "\n"
@@ -546,26 +610,49 @@ run_test_iteration() {
 
 
     # Calculate Difference on Host
-    number_items=${#write_bytes_host_after_test[@]}
+    number_items=${#write_bytes_stat_host_after_test[@]}
     for index in $(seq 0 $((${number_items}-1)))
     do
         # Host Device
         device_host="${BENCHMARK_HOST_DEVICES[$index]}"
 
-        # Before
-        before_value_host=${write_bytes_host_before_test[${index}]}
+        # Before (stat)
+        before_value_stat_host=${write_bytes_stat_host_before_test[${index}]}
 
-        # After
-        after_value_host=${write_bytes_host_after_test[${index}]}
+        # After (stat)
+        after_value_stat_host=${write_bytes_stat_host_after_test[${index}]}
 
-        # Delta
-        delta_value_host=$((${after_value_host} - ${before_value_host}))
+        # Delta (stat)
+        delta_value_stat_host=$((${after_value_stat_host} - ${before_value_stat_host}))
 
-        # Calculate Write Amplification
-        write_amplification_factor=$(echo "scale=3; ${delta_value_host} / ${delta_value_guest}" | bc)
+        # Calculate Write Amplification (stat)
+        write_amplification_factor_stat=$(echo "scale=3; ${delta_value_stat_host} / ${delta_value_guest}" | bc)
+
+
+        # Before (smart)
+        before_value_smart_host=${write_bytes_smart_host_before_test[${index}]}
+
+        # After (stat)
+        after_value_smart_host=${write_bytes_smart_host_after_test[${index}]}
+
+        # Delta (stat)
+        delta_value_smart_host=$((${after_value_smart_host} - ${before_value_smart_host}))
+
+        # Calculate Write Amplification (smart)
+        write_amplification_factor_smart=$(echo "scale=3; ${delta_value_smart_host} / ${delta_value_guest}" | bc)
+
 
         # Echo
-        echo -e "Write Amplification from GUEST to HOST [${device_host}]: ${write_amplification_factor}"
+        echo -e "Write Amplification from GUEST to HOST [${device_host}] using stat: ${write_amplification_factor_stat}"
+        echo -e "\tValue before Benchmark on HOST [${device_host}]: ${before_value_stat_host} B ($(convert_gigabytes_to_bytes ${before_value_stat_host}) GB)"
+        echo -e "\tValue after Benchmark on HOST [${device_host}]: ${after_value_stat_host} B ($(convert_gigabytes_to_bytes ${after_value_stat_host}) GB))"
+        echo -e "\tValue difference Benchmark on HOST [${device_host}]: ${delta_value_stat_host} B ($(convert_gigabytes_to_bytes ${delta_value_stat_host}) GB))"
+
+        # Echo
+        echo -e "Write Amplification from GUEST to HOST [${device_host}] using smartmontools: ${write_amplification_factor_smart}"
+        echo -e "\tValue before Benchmark on HOST [${device_host}]: ${before_value_smart_host} B ($(convert_gigabytes_to_bytes ${before_value_smart_host}) GB)"
+        echo -e "\tValue after Benchmark on HOST [${device_host}]: ${after_value_smart_host} B ($(convert_gigabytes_to_bytes ${after_value_smart_host}) GB))"
+        echo -e "\tValue difference Benchmark on HOST [${device_host}]: ${delta_value_smart_host} B ($(convert_gigabytes_to_bytes ${delta_value_smart_host}) GB))"
     done
 
     # Vertical Space
