@@ -204,8 +204,10 @@ get_smart_written_bytes() {
    lba_size=$(echo "${linformation}" | grep "Sector Sizes" | sed -E "s|Sector Sizes:     ([0-9]+) bytes logical, ([0-9]+) bytes physical|\1|g")
 
    # Debug
-   # echo "Attributes: ${attributes}"
-   # echo "LBAS Written: ${lbas_written}"
+   echo "Attributes: ${attributes}"
+   echo "Information: ${information}"
+   echo "LBAS Written: ${lbas_written}"
+   echo "LBA Size: ${lba_size}"
 
    # Convert LBAs -> bytes
    bytes_written=$(echo "${lbas_written} * ${lba_size}" | bc)
