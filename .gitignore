@@ -8,3 +8,11 @@ data/**
 info
 info/
 info/**
+
+test
+test/
+test/**
+
+tests
+tests/
+tests/**
