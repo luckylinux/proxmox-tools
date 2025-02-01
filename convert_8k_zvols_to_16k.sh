@@ -103,7 +103,7 @@ do
         zfs create -V "${volsize}" -o volblocksize=16K "${zvol}"
 
         # Copy the old Data into it
-        if [[ "${program_copy_blocks}" == "dd" ]]
+        if [[ "${PROGRAM_COPY_BLOCKS}" == "dd" ]]
         then
             # Use dd
 
@@ -116,7 +116,7 @@ do
 
             # Use "sync" IO for both Reading and Writing
             # dd if="${source_device}" of="${destination_device}" status=progress iflag=fullblock,sync oflag=sync
-        elif [[ "${program_copy_blocks}" == "ddrescue" ]]
+        elif [[ "${PROGRAM_COPY_BLOCKS}" == "ddrescue" ]]
         then
             # Use ddrescue
 
@@ -127,7 +127,7 @@ do
             ddrescue --force --idirect --retry-passes=3 --no-scrape "${source_device}" "${destination_device}" "${zvol_infofolder}/rescue.map"
         else
             # Echo
-            echo "ERROR: Copy Program ${program_copy_blocks} is NOT supported to perform Block Level Copy of /dev/zvol/${zvol_old} -> /dev/zvol/${zvol}. Aborting !"
+            echo "ERROR: Copy Program ${PROGRAM_COPY_BLOCKS} is NOT supported to perform Block Level Copy of /dev/zvol/${zvol_old} -> /dev/zvol/${zvol}. Aborting !"
 
             # Abort
             exit 9

@@ -1,4 +1,10 @@
 #!/bin/bash
 
 # Program to copy Blocks (dd or ddrescue)
-program_copy_blocks="ddrescue"
+PROGRAM_COPY_BLOCKS="ddrescue"
+
+# Test Path
+BENCHMARK_VM_TEST_PATH="/usr/src/stress-io/"
+
+# Guest ID
+BENCHMARK_VM_ID=""
