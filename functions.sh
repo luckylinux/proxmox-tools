@@ -648,7 +648,6 @@ run_test_iteration() {
     echo -e "\tValue after Benchmark on GUEST: ${after_value_guest} B (${after_value_guest_gigabytes} GB)"
     echo -e "\tValue difference Benchmark on GUEST: ${delta_value_guest} B (${delta_value_guest_gigabytes} GB)"
 
-
     # Calculate Difference on Host
     number_items=${#write_bytes_stat_host_after_test[@]}
     for index in $(seq 0 $((${number_items}-1)))
@@ -704,6 +703,21 @@ run_test_iteration() {
         echo -e "\tValue before Benchmark on HOST [${device_host}]: ${before_value_smart_host} B (${before_value_smart_host_gigabytes} GB)"
         echo -e "\tValue after Benchmark on HOST [${device_host}]: ${after_value_smart_host} B (${after_value_smart_host_gigabytes} GB)"
         echo -e "\tValue difference Benchmark on HOST [${device_host}]: ${delta_value_smart_host} B (${delta_value_smart_host_gigabytes} GB)"
+
+
+        # Define device_guest for logging
+        device_guest="${BENCHMARK_VM_TEST_DEVICE}"
+
+        # Write Results to File in CSV Format
+        # (only use the 1st Physical Device to Save Data)
+        if [[ ! -f "" ]]
+        then
+            # Add Headers
+            echo "# device_host,device_guest,flex_groups,fio_test_type,fio_block_size,fio_queue_depth,before_value_stat_host,before_value_stat_host_gigabytes,after_value_stat_host,after_value_stat_host_gigabytes,delta_value_stat_host,delta_value_stat_host_gigabytes,write_amplification_factor_stat,before_value_smart_host,before_value_smart_host_gigabytes,after_value_smart_host,after_value_smart_host_gigabytes,delta_value_smart_host,delta_value_smart_host_gigabytes,before_value_guest,before_value_guest_gigabytes,after_value_guest,after_value_guest_gigabytes,delta_value_guest,delta_value_guest_gigabytes,write_amplification_factor_smart" >> "${resultsfolder}/${device_host}.csv"
+        fi
+
+        # Add Values
+        echo "${device_host},${device_guest},${lgroups},${ltype},${lblocksize},${lqueuedepth},${before_value_stat_host},${before_value_stat_host_gigabytes},${after_value_stat_host},${after_value_stat_host_gigabytes},${delta_value_stat_host},${delta_value_stat_host_gigabytes},${write_amplification_factor_stat},${before_value_smart_host},${before_value_smart_host_gigabytes},${after_value_smart_host},${after_value_smart_host_gigabytes},${delta_value_smart_host},${delta_value_smart_host_gigabytes},${before_value_guest},${before_value_guest_gigabytes},${after_value_guest},${after_value_guest_gigabytes},${delta_value_guest},${delta_value_guest_gigabytes},${write_amplification_factor_smart}" >> "${resultsfolder}/${device_host}.csv"
     done
 
     # Vertical Space

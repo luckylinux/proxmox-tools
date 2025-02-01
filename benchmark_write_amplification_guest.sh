@@ -12,5 +12,14 @@ source "${toolpath}/config.sh"
 # Load Functions
 source "${toolpath}/functions.sh"
 
+# Generate Timestamp
+timestamp=$(date +"%Y%m%d-%H%M%S")
+
+# Folder where to save Information about the Original ZVOL
+resultsfolder="${toolpath}/data/${timestamp}"
+
+# Create Folder if not exist yet
+mkdir -p "${infofolder}"
+
 # Run Test Batch
 run_test_batch
