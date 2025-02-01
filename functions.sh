@@ -205,7 +205,7 @@ get_io_statistics() {
        # Run Command on VM
        # lcmd_string="ldev=$(basename $(readlink --canonicalize \"\${ldev}\"); if [[ -e \"/sys/block/${ldev}\" ]]; then cat \"/sys/block/${ldev}/stat\"); fi"
        lcmd_string="if [[ -L \"${ldev}\" ]]; then ldev=\$(basename \$(readlink --canonicalize \"${ldev}\")); fi; if [[ -e \"/sys/block/${ldev}\" ]]; then cat \"/sys/block/${ldev}/stat\"); fi"
-       lcmd_return_value=$(run_command_on_vm "${lcmd_string}")
+       lcmd_return_value=$(run_command_inside_vm "${lcmd_string}")
 
        # Return Result from Inside
        echo ${lcmd_return_value} | jq -r '."out-data"'
@@ -356,9 +356,8 @@ analyse_guest_device() {
 
    #for device in "${BENCHMARK_VM_TEST_DEVICE[@]}"
    #do
-       # Get Value
-       lcmd_string=$(get_io_statistics_write_bytes "${device}" "remote")
-       write_bytes=$(run_command_on_vm "${lcmd_string}")
+       # Get Value (get_io_statistics_write_bytes already runs the command inside the VM if desired)
+       write_bytes=$(get_io_statistics_write_bytes "${device}" "remote")
 
        # Store in Return Array
        lreturnarray+=("${write_bytes}")
