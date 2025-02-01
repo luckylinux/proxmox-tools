@@ -12,7 +12,7 @@ source ${toolpath}/config.sh
 # Exec Function in Guest
 run_command_inside_vm() {
     # Input Arguments
-    local lcmd=$1
+    local lcmd="$@"
 
     # Run Command inside VM
     qm guest exec "${BENCHMARK_VM_ID}" --timeout 0 -- /bin/bash -c "${lcmd}"
