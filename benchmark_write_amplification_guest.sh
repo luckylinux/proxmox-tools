@@ -158,13 +158,20 @@ get_io_statistics_write_bytes() {
 
 # Analyze Devices
 analyse_host_devices() {
+   # The return Array is passed by nameref
+   # Reference to output array
+   declare -n lreturnarray="${1}"
+
    for device in "${BENCHMARK_HOST_DEVICES[@]}"
    do
        # Get Value
        write_bytes=$(get_io_statistics_write_bytes "${device}")
 
+       # Store in Return Array
+       lreturnarray+=("${write_bytes}")
+
        # Echo
-       echo "Write Bytes for Device ${device}: {write_bytes}"
+       echo "Write Bytes for Device ${device}: ${write_bytes}"
    done
 }
 
@@ -172,8 +179,11 @@ analyse_host_devices() {
 # Just Analyse the first Host Device
 device="${BENCHMARK_HOST_DEVICES[0]}"
 
+# Declare write_bytes_host_before_test as a (global) array that we will pass to analyse_host_devices() by reference
+declare -a write_bytes_host_before_test
+
 # Analyse Host Devices before Test
-analyse_host_devices
+analyse_host_devices write_bytes_host_before_test
 
 # Value before Test
 # write_bytes_before_test=$(get_io_statistics_write_bytes "${device}")
@@ -188,5 +198,8 @@ run_command_inside_vm $(random_io "4K")
 # Value after Test
 # write_bytes_after_test=$(get_io_statistics_write_bytes "${device}")
 
+# Declare write_bytes_host_before_test as a (global) array that we will pass to analyse_host_devices() by reference
+declare -a write_bytes_host_after_test
+
 # Analyse Host Devices after Test
-analyse_host_devices
+analyse_host_devices write_bytes_host_after_test
