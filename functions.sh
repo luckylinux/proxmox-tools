@@ -505,6 +505,9 @@ run_test_iteration() {
         exit 9
     fi
 
+    # Flush Writes
+    cmd_return_value=$(run_command_inside_vm "sync")
+
     # Vertical Space
     echo -e "\n\n"
 
