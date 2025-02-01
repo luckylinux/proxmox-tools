@@ -125,23 +125,27 @@ init_guest_test() {
 # Random IO Test Function
 random_io() {
     # Input Arguments
-    local lbs=${1-"${BENCHMARK_VM_DEFAULT_RANDOM_BLOCK_SIZE}"}
+    local lblocksize=${1-"${BENCHMARK_VM_DEFAULT_RANDOM_BLOCK_SIZE}"}
     local lqueuedepth=${2-"${BENCHMARK_VM_DEFAULT_RANDOM_QUEUE_DEPTH}"}
-    local lsize=${3-"${BENCHMARK_VM_DEFAULT_SIZE}"}
+
+    # Constant
+    local lsize="${BENCHMARK_VM_DEFAULT_SIZE}"
 
     # Test Command
-    echo "sudo fio --name=write_iops --directory=\"${BENCHMARK_VM_TEST_PATH}\" --size=\"${lsize}\" --runtime=600s --ramp_time=2s --ioengine=libaio --direct=1 --verify=0 --bs=\"${lbs}\" --iodepth=\"${lqueuedepth}\" --rw=randwrite --group_reporting=1"
+    echo "sudo fio --name=write_iops --directory=\"${BENCHMARK_VM_TEST_PATH}\" --size=\"${lsize}\" --runtime=600s --ramp_time=2s --ioengine=libaio --direct=1 --verify=0 --bs=\"${lblocksize}\" --iodepth=\"${lqueuedepth}\" --rw=randwrite --group_reporting=1"
 }
 
 # Throuput Test Function
 throughput_io() {
     # Input Arguments
-    local lbs=${1-"${BENCHMARK_VM_DEFAULT_THROUGHPUT_BLOCK_SIZE}"}
+    local lblocksize=${1-"${BENCHMARK_VM_DEFAULT_THROUGHPUT_BLOCK_SIZE}"}
     local lqueuedepth=${2-"${BENCHMARK_VM_DEFAULT_THROUGHPUT_QUEUE_DEPTH}"}
-    local lsize=${3-"${BENCHMARK_VM_DEFAULT_SIZE}"}
+
+    # Constant
+    local lsize="${BENCHMARK_VM_DEFAULT_SIZE}"
 
     # Test Command
-    echo "sudo fio --name=write_throughput --directory=\"${BENCHMARK_VM_TEST_PATH}\" --numjobs=16 --size=\"${lsize}\" --runtime=600s --ramp_time=2s --ioengine=libaio --direct=1 --verify=0 --bs=\"${lbs}\" --iodepth=\"${lqueuedepth}\" --rw=write --group_reporting=1"
+    echo "sudo fio --name=write_throughput --directory=\"${BENCHMARK_VM_TEST_PATH}\" --numjobs=16 --size=\"${lsize}\" --runtime=600s --ramp_time=2s --ioengine=libaio --direct=1 --verify=0 --bs=\"${lblocksize}\" --iodepth=\"${lqueuedepth}\" --rw=write --group_reporting=1"
 }
 
 # Convert Gigabytes to Bytes
@@ -310,7 +314,6 @@ run_test_batch() {
         # Echo
         # echo "Using flex_group = ${flex_group} for mkfs.ext4 -G"
 
-
         # Perform Random IO Testing
         for random_block_size in "${BENCHMARK_VM_FIO_RANDOM_BLOCK_SIZE[@]}"
         do
@@ -403,16 +406,16 @@ run_test_iteration() {
     if [[ "${ltype}" == "random" ]]
     then
         # Run Benchmark and store Return Value in Variable
-        cmd_string=$(random_io "${lblocksize}" "${lqueudepth}")
+        cmd_string=$(random_io "${lblocksize}" "${lqueuedepth}")
         echo "Running Command String: ${cmd_string}"
-        run_command_inside_vm "${cmd_string}"
+        # run_command_inside_vm "${cmd_string}"
         cmd_return_value=$(run_command_inside_vm "${cmd_string}")
     elif [[ "${ltype}" == "throughput" ]]
     then
         # Run Benchmark and store Return Value in Variable
-        cmd_string=$(throughput_io "${lblocksize}" "${lqueudepth}")
+        cmd_string=$(throughput_io "${lblocksize}" "${lqueuedepth}")
         echo "Running Command String: ${cmd_string}"
-        run_command_inside_vm "${cmd_string}"
+        # run_command_inside_vm "${cmd_string}"
         cmd_return_value=$(run_command_inside_vm "${cmd_string}")
     else
         # Echo
@@ -447,7 +450,7 @@ setup_guest_device() {
     local lgroups="$1"
 
     # Block Size
-    # local lbs=${2-""}
+    # local lblocksize=${2-""}
 
     # Make sure to UNMOUNT the Device before starting
     run_command_inside_vm "if mountpoint -q \"${BENCHMARK_VM_TEST_PATH}\"; then umount \"${BENCHMARK_VM_TEST_PATH}\"; fi"
