@@ -194,7 +194,7 @@ get_smart_written_bytes() {
 
    # Check if it's a Physical Device
    if [[ "${ldev}" == "/dev/disk/by-id/"* ]]
-   then"
+   then
        # Read all Attributes
        lattributes=$(smartctl --attributes "${ldev}")
 
