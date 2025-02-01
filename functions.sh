@@ -191,11 +191,10 @@ get_smart_written_bytes() {
    local linformation
 
    # Read all Attributes
-   lattributes=$(smartctl --attributes /dev/disk/by-id/${disk})
+   lattributes=$(smartctl --attributes "${ldev}")
 
    # Read all Information
-   linformation=$(smartctl --attributes /dev/disk/by-id/${disk})
-
+   linformation=$(smartctl --attributes "${ldev}")
 
    # Get Written LBAs
    lbas_written=$(echo "${lattributes}" | grep "${LBAS_WRITTEN_TAG}" | awk '{print $10}')
