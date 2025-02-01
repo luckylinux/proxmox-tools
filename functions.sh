@@ -403,13 +403,13 @@ run_test_iteration() {
     if [[ "${ltype}" == "random" ]]
     then
         # Run Benchmark and store Return Value in Variable
-        run_command_inside_vm random_io "${lblocksize}" "${lqueudepth}"
-        cmd_return_value=$(run_command_inside_vm random_io "${lblocksize}" "${lqueudepth}")
+        cmd_string=$(random_io "${lblocksize}" "${lqueudepth}")
+        cmd_return_value=$(run_command_inside_vm "${cmd_string}")
     elif [[ "${ltype}" == "throughput" ]]
     then
         # Run Benchmark and store Return Value in Variable
-        run_command_inside_vm throughput_io "${lblocksize}" "${lqueudepth}"
-        cmd_return_value=$(run_command_inside_vm throughput_io "${lblocksize}" "${lqueudepth}")
+        cmd_string=$(throughput_io "${lblocksize}" "${lqueudepth}")
+        cmd_return_value=$(run_command_inside_vm "${cmd_string}")
     else
         # Echo
         echo "ERROR: Benchmark Type ${ltype} is NOT supported. Valid Choices are: [random, thoughput]. Aborting."]
