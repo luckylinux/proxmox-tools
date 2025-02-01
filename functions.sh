@@ -196,10 +196,10 @@ get_smart_written_bytes() {
    if [[ "${ldev}" == "/dev/disk/by-id/"* ]]
    then
        # Read all Attributes
-       lattributes=$(smartctl --attributes "${ldev}")
+       lattributes=$(smartctl -A "${ldev}")
 
        # Read all Information
-       linformation=$(smartctl --attributes "${ldev}")
+       linformation=$(smartctl -a "${ldev}")
 
        # Get Written LBAs
        lbas_written=$(echo "${lattributes}" | grep -E "Total_LBAs_Written" | awk '{print $10}')
