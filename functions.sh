@@ -192,34 +192,38 @@ get_smart_written_bytes() {
    local lbas_written
    local lba_size
 
-   # Read all Attributes
-   lattributes=$(smartctl --attributes "${ldev}")
+   # Check if it's a Physical Device
+   if [[ "${ldev}" == "/dev/disk/by-id/"* ]]
+   then"
+       # Read all Attributes
+       lattributes=$(smartctl --attributes "${ldev}")
 
-   # Read all Information
-   linformation=$(smartctl --attributes "${ldev}")
+       # Read all Information
+       linformation=$(smartctl --attributes "${ldev}")
 
-   # Get Written LBAs
-   lbas_written=$(echo "${lattributes}" | grep "${LBAS_WRITTEN_TAG}" | awk '{print $10}')
+       # Get Written LBAs
+       lbas_written=$(echo "${lattributes}" | grep "${LBAS_WRITTEN_TAG}" | awk '{print $10}')
 
-   # Get Sector Size
-   lba_size=$(echo "${linformation}" | grep "Sector Sizes" | sed -E "s|Sector Sizes:\s*?([0-9]+) bytes logical, ([0-9]+) bytes physical|\1|g")
+       # Get Sector Size
+       lba_size=$(echo "${linformation}" | grep "Sector Sizes" | sed -E "s|Sector Sizes:\s*?([0-9]+) bytes logical, ([0-9]+) bytes physical|\1|g")
 
-   # Debug
-   echo "Attributes: ${lattributes}"
-   echo "Information: ${linformation}"
-   echo "LBAS Written: ${lbas_written}"
-   echo "LBA Size: ${lba_size}"
+       # Debug
+       echo "Attributes: ${lattributes}"
+       echo "Information: ${linformation}"
+       echo "LBAS Written: ${lbas_written}"
+       echo "LBA Size: ${lba_size}"
 
-   # Convert LBAs -> bytes
-   bytes_written=$(echo "${lbas_written} * ${lba_size}" | bc)
+       # Convert LBAs -> bytes
+       bytes_written=$(echo "${lbas_written} * ${lba_size}" | bc)
 
-   # Convert into bigger Units
-   # megabytes_written=$(echo "scale=3; ${bytes_written} / ${BYTES_PER_MB}" | bc)
-   # gigabytes_written=$(echo "scale=3; ${bytes_written} / ${BYTES_PER_GB}" | bc)
-   # terabytes_written=$(echo "scale=3; ${bytes_written} / ${BYTES_PER_TB}" | bc)
+       # Convert into bigger Units
+       # megabytes_written=$(echo "scale=3; ${bytes_written} / ${BYTES_PER_MB}" | bc)
+       # gigabytes_written=$(echo "scale=3; ${bytes_written} / ${BYTES_PER_GB}" | bc)
+       # terabytes_written=$(echo "scale=3; ${bytes_written} / ${BYTES_PER_TB}" | bc)
 
-   # Return Value
-   echo "${bytes_written}"
+       # Return Value
+       echo "${bytes_written}"
+   fi
 }
 
 # Get IO Statistics Data
