@@ -524,8 +524,14 @@ run_test_iteration() {
     # Analyse Host Devices after Test
     analyse_host_devices write_bytes_host_after_test
 
+    # Vertical Space
+    echo -e "\n"
+
     # Analyze Guest Device after Test
     analyse_guest_device write_bytes_guest_after_test
+
+    # Vertical Space
+    echo -e "\n"
 
     # Calculate Difference on Guest
 
