@@ -6,6 +6,94 @@ if [[ ! -v toolpath ]]; then scriptpath=$(cd "$( dirname "${BASH_SOURCE[0]}" )" 
 # shellcheck source=./config.sh
 source "${toolpath}/config.sh"
 
+
+# Repeat Character N times
+repeat_character() {
+   # Character to repeat
+   local lcharacter=${1}
+
+   # Number of Repetitions
+   local lrepetitions=${2}
+
+   # Print using Brace Expansion
+   #for i in {1 ... ${lrepetitions}}
+   for i in $(seq 1 1 ${lrepetitions})
+   do
+       echo -n "${lcharacter}"
+   done
+}
+
+# Add Line Separator
+add_separator() {
+   local lcharacter=${1-"#"}
+   local lrows=${2-"1"}
+
+   # Get width of Terminal
+   local lwidth=$(tput cols)
+
+   # Repeat Character
+   for r in $(seq 1 1 ${lrows})
+   do
+      repeat_character "${lcharacter}" "${lwidth}"
+   done
+}
+
+# Add Line Separator with Description
+add_section() {
+   local lcharacter=${1-"#"}
+   local lrows=${2-"1"}
+   local ldescription=${3-""}
+
+   # Determine number of Separators BEFORE and AFTER the Description
+   #local lrowsseparatorsbefore=$(echo "${lrows-1} / ( 2 )" | bc -l)
+   #local lrowsseparatorafter="${lrowsseparatorsbefore}"
+   local lrowsbefore="${lrows}"
+   local lrowsafter="${lrows}"
+
+   # Add Separator
+   add_separator "${lcharacter}" "${lrowsbefore}"
+
+   # Add Header with Description
+   add_description "${lcharacter}" "${ldescription}"
+
+   # Add Separator
+   add_separator "${lcharacter}" "${lrowsafter}"
+}
+
+add_description() {
+   # User Inputs
+   local lcharacter=${1-"#"}
+   local ldescription=${2-""}
+
+   # Add one Space before and after the original String
+   ldescription=" ${ldescription} "
+
+   # Get width of Terminal
+   local lwidth=$(tput cols)
+
+   # Get length of Description
+   local llengthdescription=${#ldescription}
+
+   # Get width of Terminal
+   local lwidth=$(tput cols)
+
+   # Subtract Description from Terminal Width
+   local llengthseparator=$((lwidth - llengthdescription))
+
+   # Divide by two
+   local llengtheachseparator=$(echo "${llengthseparator} / ( 2 )" | bc -l)
+
+   # Remainer
+   local lremainer=$((llengthseparator % 2))
+   local lextrastr=$(repeat_character "${lcharacter}" "${lremainer}")
+
+   # Get String of Characters for BEFORE and AFTER the Description
+   local lseparator=$(repeat_character "${lcharacter}" "${llengtheachseparator}")
+
+   # Print Description Line
+   echo "${lseparator}${ldescription}${lextrastr}${lseparator}"
+}
+
 # Exec Function in Guest
 run_command_inside_vm() {
     # Input Arguments
@@ -264,6 +352,16 @@ run_test_iteration() {
     local ltype="$2"
     local lblocksize="$3"
     local lqueuedepth="$4"
+
+    # Echo
+    echo -e "\n\n"
+
+    add_section "Run Test Iteration" "2"
+
+    echo -e "\tNumber of Groups (Flex Groups): ${lgroups}"
+    echo -e "\tType of IO Test: ${ltype}"
+    echo -e "\tBlock Size of IO Test: ${lblocksize}"
+    echo -e "\tQueue Depth of IO Test: ${lqueuedepth}"
 
     # Declare write_bytes_host_before_test as a (global) array that we will pass to analyse_host_devices() by reference
     declare -a write_bytes_host_before_test
