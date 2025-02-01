@@ -20,11 +20,8 @@ run_command_inside_vm() {
 
 # Init / Reset Folder
 init_guest_test() {
-   # Remove Folder if it exists
-   rm -rf "${BENCHMARK_VM_TEST_PATH}"
-
-   # Create Folder
-   mkdir -p "${BENCHMARK_VM_TEST_PATH}"
+   # Remove Folder if it exists & (Re)Create Folder
+   echo "rm -rf \"${BENCHMARK_VM_TEST_PATH}\"; mkdir -p \"${BENCHMARK_VM_TEST_PATH}\""
 }
 
 # Random IO Test Function
@@ -167,7 +164,7 @@ device="${BENCHMARK_HOST_DEVICES[0]}"
 write_bytes_before_test=$(get_io_statistics_write_bytes "${device}")
 
 # Init Test and Setup Folders
-init_guest_test
+run_command_inside_vm $(init_guest_test)
 
 # Run Several Tests
 run_command_inside_vm $(random_io "4K")
