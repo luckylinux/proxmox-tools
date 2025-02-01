@@ -64,7 +64,7 @@ get_io_statistics_read_ios() {
    local ldev="$1"
 
    # Return Value
-   $(get_io_statistics "${ldev}") | awk '{print $1}'
+   echo $(get_io_statistics "${ldev}") | awk '{print $1}'
 }
 
 # Get IO Statistics Data (Read Merges)
@@ -74,7 +74,7 @@ get_io_statistics_read_merges() {
    local ldev="$1"
 
    # Return Value
-   $(get_io_statistics "${ldev}") | awk '{print $2}'
+   echo $(get_io_statistics "${ldev}") | awk '{print $2}'
 }
 
 # Get IO Statistics Data (Read Sectors)
@@ -84,7 +84,7 @@ get_io_statistics_read_sectors() {
    local ldev="$1"
 
    # Return Value
-   $(get_io_statistics "${ldev}") | awk '{print $3}'
+   echo $(get_io_statistics "${ldev}") | awk '{print $3}'
 }
 
 # Get IO Statistics Data (Read Ticks)
@@ -94,7 +94,7 @@ get_io_statistics_read_ticks() {
    local ldev="$1"
 
    # Return Value
-   $(get_io_statistics "${ldev}") | awk '{print $4}'
+   echo $(get_io_statistics "${ldev}") | awk '{print $4}'
 }
 
 # Get IO Statistics Data (Write IOs)
@@ -104,7 +104,7 @@ get_io_statistics_write_ios() {
    local ldev="$1"
 
    # Return Value
-   $(get_io_statistics "${ldev}") | awk '{print $5}'
+   echo $(get_io_statistics "${ldev}") | awk '{print $5}'
 }
 
 # Get IO Statistics Data (Write Merges)
@@ -114,7 +114,7 @@ get_io_statistics_write_merges() {
    local ldev="$1"
 
    # Return Value
-   $(get_io_statistics "${ldev}") | awk '{print $6}'
+   echo $(get_io_statistics "${ldev}") | awk '{print $6}'
 }
 
 # Get IO Statistics Data (Write Sectors)
@@ -124,7 +124,7 @@ get_io_statistics_write_sectors() {
    local ldev="$1"
 
    # Return Value
-   $(get_io_statistics "${ldev}") | awk '{print $7}'
+   echo $(get_io_statistics "${ldev}") | awk '{print $7}'
 }
 
 # Get IO Statistics Data (Write Ticks)
@@ -134,7 +134,7 @@ get_io_statistics_write_ticks() {
    local ldev="$1"
 
    # Return Value
-   $(get_io_statistics "${ldev}") | awk '{print $8}'
+   echo $(get_io_statistics "${ldev}") | awk '{print $8}'
 }
 
 # Get IO Statistics Data (Write Sectors are "standardized" 512b, indipendent of FS Block/Sector Size)
