@@ -6,7 +6,6 @@ if [[ ! -v toolpath ]]; then scriptpath=$(cd "$( dirname "${BASH_SOURCE[0]}" )" 
 # shellcheck source=./config.sh
 source "${toolpath}/config.sh"
 
-
 # Repeat Character N times
 repeat_character() {
    # Character to repeat
@@ -356,7 +355,7 @@ run_test_iteration() {
     # Echo
     echo -e "\n\n"
 
-    add_section "Run Test Iteration" "2"
+    add_section "#" "2" "Run Test Iteration"
 
     echo -e "\tNumber of Groups (Flex Groups): ${lgroups}"
     echo -e "\tType of IO Test: ${ltype}"
