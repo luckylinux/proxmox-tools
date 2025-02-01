@@ -202,7 +202,7 @@ get_smart_written_bytes() {
        linformation=$(smartctl --attributes "${ldev}")
 
        # Get Written LBAs
-       lbas_written=$(echo "${lattributes}" | grep "${LBAS_WRITTEN_TAG}" | awk '{print $10}')
+       lbas_written=$(echo "${lattributes}" | grep -E "Total_LBAs_Written" | awk '{print $10}')
 
        # Get Sector Size
        lba_size=$(echo "${linformation}" | grep "Sector Sizes" | sed -E "s|Sector Sizes:\s*?([0-9]+) bytes logical, ([0-9]+) bytes physical|\1|g")
