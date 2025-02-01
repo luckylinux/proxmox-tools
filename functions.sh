@@ -658,9 +658,9 @@ run_test_iteration() {
         write_amplification_factor_stat=$(echo "scale=3; ${delta_value_stat_host} / ${delta_value_guest}" | bc)
 
         # Convert into GB
-        before_value_stat_host_gigabytes=$(convert_gigabytes_to_bytes ${before_value_stat_host})
-        after_value_stat_host_gigabytes=$(convert_gigabytes_to_bytes ${after_value_stat_host})
-        delta_value_stat_host_gigabytes=$(convert_gigabytes_to_bytes ${delta_value_stat_host})
+        before_value_stat_host_gigabytes=$(convert_bytes_to_gigabytes ${before_value_stat_host})
+        after_value_stat_host_gigabytes=$(convert_bytes_to_gigabytes ${after_value_stat_host})
+        delta_value_stat_host_gigabytes=$(convert_bytes_to_gigabytes ${delta_value_stat_host})
 
 
         # Before (smart)
@@ -676,9 +676,9 @@ run_test_iteration() {
         write_amplification_factor_smart=$(echo "scale=3; ${delta_value_smart_host} / ${delta_value_guest}" | bc)
 
         # Convert into GB
-        before_value_smart_host_gigabytes=$(convert_gigabytes_to_bytes ${before_value_smart_host})
-        after_value_smart_host_gigabytes=$(convert_gigabytes_to_bytes ${after_value_smart_host})
-        delta_value_smart_host_gigabytes=$(convert_gigabytes_to_bytes ${delta_value_smart_host})
+        before_value_smart_host_gigabytes=$(convert_bytes_to_gigabytes ${before_value_smart_host})
+        after_value_smart_host_gigabytes=$(convert_bytes_to_gigabytes ${after_value_smart_host})
+        delta_value_smart_host_gigabytes=$(convert_bytes_to_gigabytes ${delta_value_smart_host})
 
 
 
