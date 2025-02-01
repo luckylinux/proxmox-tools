@@ -426,7 +426,7 @@ setup_guest_device() {
     run_command_inside_vm "if mountpoint -q \"${BENCHMARK_VM_TEST_PATH}\"; then umount \"${BENCHMARK_VM_TEST_PATH}\"; fi"
 
     # Make sure to UNMOUNT the Device before starting
-    run_command_inside_vm "device_short_name=readlink \"${BENCHMARK_VM_TEST_DEVICE}\"); if [[ $(cat /proc/mounts | grep \"${device_short_name}\" | wc -l) -ge 1 ]]; then umount \"${BENCHMARK_VM_TEST_DEVICE}\"; fi"
+    run_command_inside_vm "device_short_name=readlink \"${BENCHMARK_VM_TEST_DEVICE}\"; if [[ $(cat /proc/mounts | grep \"${device_short_name}\" | wc -l) -ge 1 ]]; then umount \"${BENCHMARK_VM_TEST_DEVICE}\"; fi"
 
     # Make Mountpoint Mutable (again)
     run_command_inside_vm chattr -i "${BENCHMARK_VM_TEST_PATH}"
