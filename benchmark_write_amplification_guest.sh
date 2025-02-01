@@ -26,10 +26,10 @@ random_io() {
 
     # Test Command
     echo <<- EOF
-    sudo fio --name=write_iops --directory="${BENCHMARK_VM_TEST_PATH}" --size="${lsize}" \
-    --time_based --runtime=600s --ramp_time=2s --ioengine=libaio --direct=1 \
-    --verify=0 --bs="${lbs}" --iodepth=64 --rw=randwrite --group_reporting=1
-    EOF
+	sudo fio --name=write_iops --directory="${BENCHMARK_VM_TEST_PATH}" --size="${lsize}" \
+	--time_based --runtime=600s --ramp_time=2s --ioengine=libaio --direct=1 \
+	--verify=0 --bs="${lbs}" --iodepth=64 --rw=randwrite --group_reporting=1
+EOF
 }
 
 # Throuput Test Function
@@ -40,11 +40,11 @@ throuput_io() {
 
     # Test Command
     echo <<- EOF
-    sudo fio --name=write_throughput --directory="${BENCHMARK_VM_TEST_PATH}" --numjobs=16 \
-    --size="${lsize}" --time_based --runtime=60s --ramp_time=2s --ioengine=libaio \
-    --direct=1 --verify=0 --bs="${lbs}" --iodepth=64 --rw=write \
-    --group_reporting=1
-    EOF
+	sudo fio --name=write_throughput --directory="${BENCHMARK_VM_TEST_PATH}" --numjobs=16 \
+	--size="${lsize}" --time_based --runtime=60s --ramp_time=2s --ioengine=libaio \
+	--direct=1 --verify=0 --bs="${lbs}" --iodepth=64 --rw=write \
+	--group_reporting=1
+EOF
 }
 
 # Run Several Tests
