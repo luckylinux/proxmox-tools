@@ -35,6 +35,15 @@ do
     # Echo
     echo -e "Processing ZFS ZVOL ${zvol}"
 
+    # Get the Associated VM ID
+    vm_id=$(echo "${zvol}" | sed -E "s|^.*?/vm-([0-9]+)-disk-([0-9]+)$|\1|g")
+
+    # Get the Associated Disk ID
+    vm_disk_id=$(echo "${zvol}" | sed -E "s|^.*?/vm-([0-9]+)-disk-([0-9]+)$|\2|g")
+
+    # Stop VM
+    qm stop "${vm_id}"
+
     # Get VolBlockSize Property
     volblocksize_human=$(zfs get volblocksize -o "value" -t volume -H "${zvol}")
 
@@ -51,7 +60,7 @@ do
     mkdir -p "${zvol_infofolder}"
 
     # Dump all Information to File
-    zfs get all -t volume "${zvol}" > "${zvol_infofolder}/info.txt"
+    zfs get all -t volume "${zvol}" > "${zvol_infofolder}/zfs_properties.txt"
 
     # Check if needed to Convert
     if [[ ${volblocksize_numeric} -lt 16384 ]]
@@ -131,4 +140,3 @@ do
         echo -e "\tNo Conversion Required"
     fi
 done
-
