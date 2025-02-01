@@ -187,7 +187,7 @@ get_io_statistics() {
     local lcmd_string
     local lcmd_return_value
 
-    if [[ "${}" == "local" ]]
+    if [[ "${lmode}" == "local" ]]
     then
         if [[ "${ldev}" == "/dev/disk/by-id/"* ]] || [[ "${ldev}" == "/dev/mapper/"* ]] || [[ "${ldev}" == "/dev/loop/"* ]]
         then
@@ -200,7 +200,7 @@ get_io_statistics() {
         then
             cat "/sys/block/${ldev}/stat"
         fi
-    elif
+    elif [[ "${lmode}" == "remote" ]]
     then
        # Run Command on VM
        # lcmd_string="ldev=$(basename $(readlink --canonicalize \"\${ldev}\"); if [[ -e \"/sys/block/${ldev}\" ]]; then cat \"/sys/block/${ldev}/stat\"); fi"
