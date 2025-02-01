@@ -201,6 +201,7 @@ get_io_statistics() {
             cat "/sys/block/${ldev}/stat"
         fi
     elif
+    then
        # Run Command on VM
        # lcmd_string="ldev=$(basename $(readlink --canonicalize \"\${ldev}\"); if [[ -e \"/sys/block/${ldev}\" ]]; then cat \"/sys/block/${ldev}/stat\"); fi"
        lcmd_string="if [[ -L \"${ldev}\" ]]; then ldev=\$(basename \$(readlink --canonicalize \"${ldev}\")); fi; if [[ -e \"/sys/block/${ldev}\" ]]; then cat \"/sys/block/${ldev}/stat\"); fi"
