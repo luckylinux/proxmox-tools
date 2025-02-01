@@ -156,18 +156,37 @@ get_io_statistics_write_bytes() {
    echo "${sectors} * 512" | bc
 }
 
+# Analyze Devices
+analyse_host_devices() {
+   for device in "${BENCHMARK_HOST_DEVICES[@]}"
+   do
+       # Get Value
+       write_bytes=$(get_io_statistics_write_bytes "${device}")
+
+       # Echo
+       echo "Write Bytes for Device ${device}: {write_bytes}"
+   done
+}
+
 
 # Just Analyse the first Host Device
 device="${BENCHMARK_HOST_DEVICES[0]}"
 
+# Analyse Host Devices before Test
+analyse_host_devices
+
 # Value before Test
-write_bytes_before_test=$(get_io_statistics_write_bytes "${device}")
+# write_bytes_before_test=$(get_io_statistics_write_bytes "${device}")
 
 # Init Test and Setup Folders
 run_command_inside_vm $(init_guest_test)
 
 # Run Several Tests
+echo "Writing ${BENCHMARK_VM_DEFAULT_SIZE}GB inside VM"
 run_command_inside_vm $(random_io "4K")
 
 # Value after Test
-write_bytes_after_test=$(get_io_statistics_write_bytes "${device}")
+# write_bytes_after_test=$(get_io_statistics_write_bytes "${device}")
+
+# Analyse Host Devices after Test
+analyse_host_devices
