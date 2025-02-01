@@ -369,8 +369,7 @@ analyse_guest_device() {
    #for device in "${BENCHMARK_VM_TEST_DEVICE[@]}"
    #do
        # Test Standalone Command to see what's happening
-       get_io_statistics "${ldev}" "${lmode}"
-
+       get_io_statistics "${ldev}" "remote"
 
        # Get Value (get_io_statistics_write_bytes already runs the command inside the VM if desired)
        write_bytes=$(get_io_statistics_write_bytes "${device}" "remote")
