@@ -20,8 +20,18 @@ BENCHMARK_VM_TEST_DEVICE="/dev/disk/by-id/XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
 # Guest ID
 BENCHMARK_VM_ID=""
 
-# Default Random Block Size to use when Benchmarking
-# BENCHMARK_VM_DEFAULT_RANDOM_BLOCK_SIZE="4K"
+# Default Random Block Size
+BENCHMARK_VM_DEFAULT_RANDOM_BLOCK_SIZE="4K"
+
+# Default Random Queue Depth
+BENCHMARK_VM_DEFAULT_RANDOM_QUEUE_DEPTH="64"
+
+# Default Throughput Block Size
+BENCHMARK_VM_DEFAULT_THROUGHPUT_BLOCK_SIZE="1M"
+
+# Default Throughput Queue Depth
+BENCHMARK_VM_DEFAULT_THROUGHPUT_QUEUE_DEPTH="64"
+
 
 # Default Size to write to Disk for the entire Test
 BENCHMARK_VM_DEFAULT_SIZE="10G"

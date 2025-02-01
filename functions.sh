@@ -126,20 +126,22 @@ init_guest_test() {
 random_io() {
     # Input Arguments
     local lbs=${1-"${BENCHMARK_VM_DEFAULT_RANDOM_BLOCK_SIZE}"}
-    local lsize=${2-"${BENCHMARK_VM_DEFAULT_SIZE}"}
+    local lqueuedepth=${2-"${BENCHMARK_VM_DEFAULT_RANDOM_QUEUE_DEPTH}"}
+    local lsize=${3-"${BENCHMARK_VM_DEFAULT_SIZE}"}
 
     # Test Command
-    echo "sudo fio --name=write_iops --directory=\"${BENCHMARK_VM_TEST_PATH}\" --size=\"${lsize}\" --runtime=600s --ramp_time=2s --ioengine=libaio --direct=1 --verify=0 --bs=\"${lbs}\" --iodepth=64 --rw=randwrite --group_reporting=1"
+    echo "sudo fio --name=write_iops --directory=\"${BENCHMARK_VM_TEST_PATH}\" --size=\"${lsize}\" --runtime=600s --ramp_time=2s --ioengine=libaio --direct=1 --verify=0 --bs=\"${lbs}\" --iodepth=\"${lqueuedepth}\" --rw=randwrite --group_reporting=1"
 }
 
 # Throuput Test Function
 throughput_io() {
     # Input Arguments
-    local lbs=${1-"${BENCHMARK_VM_DEFAULT_RANDOM_BLOCK_SIZE}"}
-    local lsize=${2-"${BENCHMARK_VM_DEFAULT_SIZE}"}
+    local lbs=${1-"${BENCHMARK_VM_DEFAULT_THROUGHPUT_BLOCK_SIZE}"}
+    local lqueuedepth=${2-"${BENCHMARK_VM_DEFAULT_THROUGHPUT_QUEUE_DEPTH}"}
+    local lsize=${3-"${BENCHMARK_VM_DEFAULT_SIZE}"}
 
     # Test Command
-    echo "sudo fio --name=write_throughput --directory=\"${BENCHMARK_VM_TEST_PATH}\" --numjobs=16 --size=\"${lsize}\" --runtime=60s --ramp_time=2s --ioengine=libaio --direct=1 --verify=0 --bs=\"${lbs}\" --iodepth=64 --rw=write --group_reporting=1"
+    echo "sudo fio --name=write_throughput --directory=\"${BENCHMARK_VM_TEST_PATH}\" --numjobs=16 --size=\"${lsize}\" --runtime=600s --ramp_time=2s --ioengine=libaio --direct=1 --verify=0 --bs=\"${lbs}\" --iodepth=\"${lqueuedepth}\" --rw=write --group_reporting=1"
 }
 
 # Convert Gigabytes to Bytes
@@ -306,19 +308,19 @@ run_test_batch() {
     for flex_group in "${BENCHMARK_VM_MKFS_EXT4_GROUPS[@]}"
     do
         # Echo
-        echo "Using flex_group = ${flex_group} for mkfs.ext4 -G"
+        # echo "Using flex_group = ${flex_group} for mkfs.ext4 -G"
 
 
         # Perform Random IO Testing
         for random_block_size in "${BENCHMARK_VM_FIO_RANDOM_BLOCK_SIZE[@]}"
         do
             # Echo
-            echo "Using random_block_size = ${random_block_size} for fio"
+            # echo "Using random_block_size = ${random_block_size} for fio"
 
             for random_queue_depth in "${BENCHMARK_VM_FIO_RANDOM_QUEUE_DEPTH[@]}"
             do
                 # Echo
-                echo "Using random_queue_depth = ${random_queue_depth} for fio"
+                # echo "Using random_queue_depth = ${random_queue_depth} for fio"
 
                 # Run Benchmark
                 run_test_iteration "${flex_group}" "random" "${random_block_size}" "${random_queue_depth}"
@@ -330,12 +332,12 @@ run_test_batch() {
         for throughput_block_size in "${BENCHMARK_VM_FIO_THROUGHPUT_BLOCK_SIZE[@]}"
         do
             # Echo
-            echo "Using throughput_block_size = ${throughput_block_size} for fio"
+            # echo "Using throughput_block_size = ${throughput_block_size} for fio"
 
             for throughput_queue_depth in "${BENCHMARK_VM_FIO_THROUGHPUT_QUEUE_DEPTH[@]}"
             do
                 # Echo
-                echo "Using throughput_queue_depth = ${throughput_queue_depth} for fio"
+                # echo "Using throughput_queue_depth = ${throughput_queue_depth} for fio"
 
                 # Run Benchmark
                 run_test_iteration "${flex_group}" "throughput" "${throughput_block_size}" "${throughput_queue_depth}"
@@ -352,21 +354,30 @@ run_test_iteration() {
     local lblocksize="$3"
     local lqueuedepth="$4"
 
-    # Echo
+    # Vertical Space
     echo -e "\n\n"
 
+    # Echo
     add_section "#" "2" "Run Test Iteration"
 
-    echo -e "\tNumber of Groups (Flex Groups): ${lgroups}"
-    echo -e "\tType of IO Test: ${ltype}"
-    echo -e "\tBlock Size of IO Test: ${lblocksize}"
-    echo -e "\tQueue Depth of IO Test: ${lqueuedepth}"
+    echo -e ""
+
+    echo -e "Number of Groups (Flex Groups): ${lgroups}"
+    echo -e "Type of IO Test: ${ltype}"
+    echo -e "Block Size of IO Test: ${lblocksize}"
+    echo -e "Queue Depth of IO Test: ${lqueuedepth}"
+
+    # Vertical Space
+    echo -e "\n\n"
 
     # Declare write_bytes_host_before_test as a (global) array that we will pass to analyse_host_devices() by reference
     declare -a write_bytes_host_before_test
 
     # Analyse Host Devices before Test
     analyse_host_devices write_bytes_host_before_test
+
+    # Vertical Space
+    echo -e "\n\n"
 
     # Value before Test
     # write_bytes_before_test=$(get_io_statistics_write_bytes "${device}")
@@ -375,14 +386,18 @@ run_test_iteration() {
     # (ONLY if **NOT** using a Separate Device)
     if [[ -z "${BENCHMARK_VM_TEST_DEVICE}" ]]
     then
+        # Init Guest Test
         init_guest_test
+    else
+        # Setup Guest Device
+        setup_guest_device "${flex_group}"
     fi
 
-    # Setup Guest Device
-    setup_guest_device "${flex_group}"
+    # Vertical Space
+    echo -e "\n\n"
 
     # Run Benchmark inside VM
-    echo "Writing ${BENCHMARK_VM_DEFAULT_SIZE}GB inside VM"
+    echo -e "Writing ${BENCHMARK_VM_DEFAULT_SIZE} inside VM"
 
     # Decide whether to run Random IO or Throughput IO Benchmark
     if [[ "${ltype}" == "random" ]]
@@ -401,6 +416,9 @@ run_test_iteration() {
         exit 9
     fi
 
+    # Vertical Space
+    echo -e "\n\n"
+
     # Value after Test
     # write_bytes_after_test=$(get_io_statistics_write_bytes "${device}")
 
@@ -409,6 +427,9 @@ run_test_iteration() {
 
     # Analyse Host Devices after Test
     analyse_host_devices write_bytes_host_after_test
+
+    # Vertical Space
+    echo -e "\n\n"
 }
 
 # Setup Guest Device
@@ -429,7 +450,7 @@ setup_guest_device() {
     run_command_inside_vm "device_short_name=$(readlink \"${BENCHMARK_VM_TEST_DEVICE}\"); if [[ $(cat /proc/mounts | grep \"${device_short_name}\" | wc -l) -ge 1 ]]; then umount \"${BENCHMARK_VM_TEST_DEVICE}\"; fi"
 
     # Make Mountpoint Mutable (again)
-    run_command_inside_vm chattr -i "${BENCHMARK_VM_TEST_PATH}"
+    run_command_inside_vm "if [[ -d \"${BENCHMARK_VM_TEST_PATH}\" ]]; then chattr -i \"${BENCHMARK_VM_TEST_PATH}\"; fi"
 
     # Remove Mountpoint and everything in it (if present)
     run_command_inside_vm rm -rf "${BENCHMARK_VM_TEST_PATH}"
