@@ -456,6 +456,9 @@ run_test_iteration() {
     # Analyse Guest Devices before Test
     analyse_guest_device write_bytes_guest_before_test
 
+    # Vertical Space
+    echo -e "\n"
+
     # Analyse Host Devices before Test
     analyse_host_devices write_bytes_host_before_test
 
