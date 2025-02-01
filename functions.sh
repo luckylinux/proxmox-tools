@@ -637,6 +637,17 @@ run_test_iteration() {
     # Delta
     delta_value_guest=$((after_value_guest - before_value_guest))
 
+    # Convert into GB
+    before_value_guest_gigabytes=$(convert_bytes_to_gigabytes ${before_value_guest})
+    after_value_guest_gigabytes=$(convert_bytes_to_gigabytes ${after_value_guest})
+    delta_value_guest_gigabytes=$(convert_bytes_to_gigabytes ${delta_value_guest})
+
+    # Echo
+    echo -e "Details of Data written on GUEST"
+    echo -e "\tValue before Benchmark on GUEST: ${before_value_guest} B (${before_value_guest_gigabytes} GB)"
+    echo -e "\tValue after Benchmark on GUEST: ${after_value_guest} B (${after_value_guest_gigabytes} GB)"
+    echo -e "\tValue difference Benchmark on GUEST: ${delta_value_guest} B (${delta_value_guest_gigabytes} GB)"
+
 
     # Calculate Difference on Host
     number_items=${#write_bytes_stat_host_after_test[@]}
