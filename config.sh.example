@@ -22,3 +22,10 @@ BENCHMARK_VM_DEFAULT_RANDOM_BLOCK_SIZE="4K"
 
 # Default Size to write to Disk for the entire Test
 BENCHMARK_VM_DEFAULT_SIZE="10G"
+
+# Host Devices to be Analyzed
+BENCHMARK_HOST_DEVICES=()
+BENCHMARK_HOST_DEVICES+=("/dev/disk/by-id/ata-XXX")
+BENCHMARK_HOST_DEVICES+=("/dev/disk/by-id/ata-YYY")
+BENCHMARK_HOST_DEVICES+=("/dev/mapper/ata-XXX_crypt")
+BENCHMARK_HOST_DEVICES+=("/dev/mapper/ata-YYY_crypt")
