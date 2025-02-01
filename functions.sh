@@ -205,7 +205,7 @@ get_io_statistics() {
     then
        # Define Command String to run in VM
        # lcmd_string="ldev=$(basename $(readlink --canonicalize \"\${ldev}\"); if [[ -e \"/sys/block/${ldev}\" ]]; then cat \"/sys/block/${ldev}/stat\"); fi"
-       lcmd_string="if [[ -L \"${ldev}\" ]]; then ldev=\$(basename \$(readlink --canonicalize \"${ldev}\")); fi; if [[ -e \"/sys/block/${ldev}\" ]]; then cat \"/sys/block/${ldev}/stat\"; fi"
+       lcmd_string="ldev=\"${$ldev}\"; if [[ -L \"\${ldev}\" ]]; then ldev=\$(basename \$(readlink --canonicalize \"\${ldev}\")); fi; if [[ -e \"/sys/block/\${ldev}\" ]]; then cat \"/sys/block/\${ldev}/stat\"; fi"
 
        # Echo
        echo "Run Command inside VM: ${lcmd_string}"
