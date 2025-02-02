@@ -586,7 +586,7 @@ get_io_statistics_write_bytes() {
 # Force Guest to write every pending Transaction to Disk
 sync_writes_guest() {
     # Echo
-    echo "Force Guest to write every pending Transaction to Disk using <sync> Command"
+    echo "\tForce Guest to write every pending Transaction to Disk using <sync> Command"
 
     # Run Command
     run_command_inside_vm "sync" > /dev/null 2>&1
@@ -598,7 +598,7 @@ sync_writes_guest() {
 # Force Host to write every pending Transaction to Disk
 sync_writes_host() {
     # Echo
-    echo "Force Host to write every pending Transaction to Disk using <sync> Command"
+    echo "\tForce Host to write every pending Transaction to Disk using <sync> Command"
 
     # Run Command
     sync
@@ -1309,10 +1309,15 @@ setup_guest_device() {
     # Block Size
     # local lblocksize=${2-""}
 
+    # Echo
+    echo -e "Setup Guest Device for Testing"
+
     # Make sure to kill all <fio> Processes before starting
+    echo -e "\tKill all existing <fio> Processes before starting the Testing"
     run_command_inside_vm "killall fio; killall fio; killall fio;" > /dev/null 2>&1
 
     # Make sure to UNMOUNT the Device before starting
+    echo -e "\tUnmount existing Testing Device"
     run_command_inside_vm "if mountpoint -q \"${BENCHMARK_VM_TEST_PATH}\"; then umount \"${BENCHMARK_VM_TEST_PATH}\"; fi" > /dev/null 2>&1
 
     # Make sure to UNMOUNT the Device before starting
@@ -1332,9 +1337,11 @@ setup_guest_device() {
     run_command_inside_vm chattr +i "${BENCHMARK_VM_TEST_PATH}" > /dev/null 2>&1
 
     # Format Device
+    echo -e "\tFormat Testing Device: mkfs.ext4 -F -G ${flex_groups} ${BENCHMARK_VM_TEST_DEVICE}"
     run_command_inside_vm mkfs.ext4 -F -G "${flex_groups}" "${BENCHMARK_VM_TEST_DEVICE}" > /dev/null 2>&1
 
     # Mount Device
+    echo -e "\tMount Testing Device: mount ${BENCHMARK_VM_TEST_DEVICE} ${BENCHMARK_VM_TEST_PATH}"
     run_command_inside_vm mount "${BENCHMARK_VM_TEST_DEVICE}" "${BENCHMARK_VM_TEST_PATH}" > /dev/null 2>&1
 
     # Make sure Guest has written everything to Device
