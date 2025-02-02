@@ -130,11 +130,41 @@ run_command_inside_vm() {
     # Input Arguments
     local lcmd="$@"
 
-    # Run Command inside VM
-    local cmd_returned_value
-    # cmd_returned_value=$(qm guest exec "${BENCHMARK_VM_ID}" --timeout 0 -- /bin/bash -c "${lcmd} > /dev/null 2>&1")
-    # cmd_returned_value=$(qm guest exec "${BENCHMARK_VM_ID}" --timeout 0 -- /bin/bash -c "${lcmd}" > /dev/null 2>&1)
-    cmd_returned_value=$(qm guest exec "${BENCHMARK_VM_ID}" --timeout 0 -- /bin/bash -c "${lcmd}")
+    # Declare Variable for qm guest exec Return Code
+    local lreturncode
+    local lattemptscounter
+
+    # Initialize Variables
+    lreturncode=255
+    lattemptscounter=1
+
+    # Keep Trying until it works
+    # 255 is the Return Code for "QEMU guest agent is not running"
+    while [ ${lreturncode} -eq 255 ] && [ ${lattemptscounter} -le ${BENCHMARK_VM_MAX_ATTEMPS} ]
+    do
+        # Debug
+        echo -e "\t\t(Attempt ${lattemptscounter})Running Command ${lcmd} inside VM" >> "${BENCHMARK_LOGFILE}"
+
+        # Run Command inside VM
+        local cmd_returned_value
+    
+        # Suppress Output (no Command Output will ever be Obtained !!!)
+        # cmd_returned_value=$(qm guest exec "${BENCHMARK_VM_ID}" --timeout 0 -- /bin/bash -c "${lcmd} > /dev/null 2>&1")
+        # cmd_returned_value=$(qm guest exec "${BENCHMARK_VM_ID}" --timeout 0 -- /bin/bash -c "${lcmd}" > /dev/null 2>&1)
+        
+        # Do NOT suppress Output on a General Basis
+        cmd_returned_value=$(qm guest exec "${BENCHMARK_VM_ID}" --timeout 0 -- /bin/bash -c "${lcmd}")
+
+        # Store Return Code
+        lreturncode=$?
+
+        # Debug
+        echo -e "\t\t${cmd_returned_value}" >> "${BENCHMARK_LOGFILE}"
+        echo -e "\t\tRunning Command ${lcmd} inside VM returned Exit Code ${lreturncode}" >> "${BENCHMARK_LOGFILE}"
+
+        # Increase Counter
+        lattemptscounter=$((lattemptscounter + 1))
+    done
 
     # Return Value (JSON)
     echo "${cmd_returned_value}"
