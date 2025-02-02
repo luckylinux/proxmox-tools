@@ -645,6 +645,61 @@ run_test_batch() {
     done
 }
 
+# Save All HOST Information
+save_all_host_info() {
+    # Input Arguments
+    # local lbasefolder="$1"
+    local ltag=${1-"before"}
+
+    # Declare Local Variables
+    local lbasefolder
+
+    # Define Base Folder Automatically
+    lbasefolder="${BENCHMARK_RESULTS_FOLDER}/${batch_counter}/host/${ltag}"
+
+    # Create Folders if not existing yet
+    mkdir -p "${lbasefolder}"
+
+    # Save HOST Pool Properties
+    zfs get all -t volume "${BENCHMARK_VM_VIRTUAL_DISK}" >> "${lbasefolder}/zvol.properties"
+
+    # Loop over Host Devices
+    for device_host in "${BENCHMARK_HOST_DEVICES[@]}"
+    do
+        # Compute Short Names
+        device_host_short=$(basename "${device_host}")
+
+        # Create Folders if not existing yet
+        mkdir -p "${lbasefolder}/${device_host_short}"
+
+        # Save HOST Smart Data (ALL)
+        smartctl -A "${device_host}" >> "${lbasefolder}/${device_host_short}/smartctl.info"
+        smartctl -a "${device_host}" >> "${lbasefolder}/${device_host_short}/smartctl.attributes"
+    done
+}
+
+# Save all GUEST Information
+save_all_guest_info() {
+    # Input Arguments
+    # local lbasefolder="$1"
+    local ltag=${1-"before"}
+
+    # Declare Local Variables
+    local lbasefolder
+
+    # Define Base Folder Automatically
+    lbasefolder="${BENCHMARK_RESULTS_FOLDER}/${batch_counter}/guest/${ltag}"
+
+    # Create Folders if not existing yet
+    mkdir -p "${lbasefolder}"
+
+    # Get Guest Filesystem Properties
+    guest_fs_properties_return_value=$(run_command_inside_vm "dumpe2fs -h \"${device_guest}\"")
+
+    # Save Guest Filesystem Properties to File
+    echo "${guest_fs_properties_return_value}" | jq -r '."out-data"' >> "${lbasefolder}/guest/ext4.properties"
+}
+
 # Run Test Iteration
 run_test_iteration() {
     # Input Arguments
@@ -655,19 +710,16 @@ run_test_iteration() {
 
     # Define device_guest
     device_guest="${BENCHMARK_VM_TEST_DEVICE}"
-
-    # Compute Short Names
-    device_host_short=$(basename "${device_host}")
     device_guest_short=$(echo "${BENCHMARK_VM_TEST_DEVICE}" | sed -E "s|^.*?/([a-zA-Z0-9_-]+)|\1|g")
 
-    # Determine Log File
-    batch_result_logfile="${BENCHMARK_RESULTS_FOLDER}/${device_host_short}.csv"
+    
 
-    # Create Folder for Details to be Stored
+    # Create Folders if not existing yet
     mkdir -p "${BENCHMARK_RESULTS_FOLDER}/${batch_counter}"
-    mkdir -p "${BENCHMARK_RESULTS_FOLDER}/${device_host_short}"
-    mkdir -p "${BENCHMARK_RESULTS_FOLDER}/${device_guest_short}"
-
+    mkdir -p "${BENCHMARK_RESULTS_FOLDER}/${batch_counter}/host"
+    mkdir -p "${BENCHMARK_RESULTS_FOLDER}/${batch_counter}/guest"
+    mkdir -p "${BENCHMARK_RESULTS_FOLDER}/${batch_counter}/guest/${device_guest_short}"
+    
     # Vertical Space
     echo -e "\n\n"
 
@@ -736,12 +788,11 @@ run_test_iteration() {
     # Get HOST Physical Block (Sector) Size
     host_device_physical_block_size=$(blockdev --getpbsz "${device_host}")
 
-    # Save HOST Pool Properties
-    zfs get all -t volume ${BENCHMARK_VM_VIRTUAL_DISK} >> "${BENCHMARK_RESULTS_FOLDER}/host/zvol.properties"
-
-    # Save GUEST Filesystem Properties
-    guest_fs_properties_return_value=$(run_command_inside_vm "dumpe2fs -h \"${device_guest}\"")
-    echo "${guest_fs_properties_return_value}" | jq -r '."out-data"' >> "${BENCHMARK_RESULTS_FOLDER}/guest/ext4.properties"
+    # Save All HOST Information
+    save_all_host_info "before"
+    
+    # Save All GUEST Filesystem Properties
+    save_all_guest_info "before"
 
     # Vertical Space
     echo -e "\n\n"
@@ -837,12 +888,15 @@ run_test_iteration() {
     echo -e "\tValue after Benchmark on GUEST: ${after_value_guest} B (${after_value_guest_gigabytes} GB)"
     echo -e "\tValue difference Benchmark on GUEST: ${delta_value_guest} B (${delta_value_guest_gigabytes} GB)"
 
-    # Calculate Difference on Host
+    # Calculate Difference on Host for each Device
     number_items=${#write_bytes_stat_host_after_test[@]}
     for index in $(seq 0 $((${number_items}-1)))
     do
-        # Host Device
+        # Define Host Device
         device_host="${BENCHMARK_HOST_DEVICES[$index]}"
+
+        # Compute Short Name for Host Device
+        device_host_short=$(basename "${device_host}")
 
         # Before (stat)
         before_value_stat_host=${write_bytes_stat_host_before_test[${index}]}
@@ -941,48 +995,35 @@ run_test_iteration() {
         batch_result_headers+=("write_amplification_factor_stat")
         batch_result_headers+=("write_amplification_factor_smart")
 
-        batch_result_headers+=("")
-        batch_result_headers+=("")
-        batch_result_headers+=("")
-        batch_result_headers+=("")
-        batch_result_headers+=("")
-        batch_result_headers+=("")
-        batch_result_headers+=("")
-        batch_result_headers+=("")
-        batch_result_headers+=("")
-        batch_result_headers+=("")
-        batch_result_headers+=("")
-        
-        
-        
-        
+        # batch_result_headers+=("")
+        # batch_result_headers+=("")
+        # batch_result_headers+=("")
+        # batch_result_headers+=("")
+        # batch_result_headers+=("")
+        # batch_result_headers+=("")
+        # batch_result_headers+=("")
+        # batch_result_headers+=("")
+        # batch_result_headers+=("")
+        # batch_result_headers+=("")
+        # batch_result_headers+=("")
 
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
+        # Determine Global Log File
+        batch_result_logfile_global="${BENCHMARK_RESULTS_FOLDER}/${device_host_short}.csv"
 
+        # Determine Local Log File
+        batch_result_logfile_local="${BENCHMARK_RESULTS_FOLDER}/${batch_counter}/${device_host_short}.csv"        
 
-        
+        # Write Headers to Local Log File in CSV Format
+        echo "#${batch_header_string}" >> "${batch_result_logfile_local}"
 
-        # Write Results to File in CSV Format
-        # (only use the 1st Physical Device to Save Data)
-        if [[ ! -f "" ]]
+        # Write Headers to Global Log File in CSV Format
+        if [[ ! -f "${batch_result_logfile_global}" ]]
         then
             # Get Header String from Array
             batch_header_string=$(join_array "," ${batch_result_headers[*]})
 
             # Write Headers to File
-            echo "#${batch_header_string}" >> "${batch_result_logfile}"
+            echo "#${batch_header_string}" >> "${batch_result_logfile_global}"
 
             # Old Variant (prefer to use BASH join_array() instead since it's more readable)
             # echo "# id,device_host,device_guest,flex_groups,fio_test_type,fio_block_size,fio_queue_depth,before_value_stat_host,before_value_stat_host_gigabytes,after_value_stat_host,after_value_stat_host_gigabytes,delta_value_stat_host,delta_value_stat_host_gigabytes,write_amplification_factor_stat,before_value_smart_host,before_value_smart_host_gigabytes,after_value_smart_host,after_value_smart_host_gigabytes,delta_value_smart_host,delta_value_smart_host_gigabytes,before_value_guest,before_value_guest_gigabytes,after_value_guest,after_value_guest_gigabytes,delta_value_guest,delta_value_guest_gigabytes,write_amplification_factor_smart" >> "${BENCHMARK_RESULTS_FOLDER}/$(basename ${device_host}).csv"
@@ -1004,12 +1045,21 @@ run_test_iteration() {
         # Get Value String from Array
         batch_value_string=$(join_array "," ${batch_result_values[*]})
 
-        # Write Values to File
-        echo "${batch_value_string}" >> "${batch_result_logfile}"
+        # Write Values to Local Log File in CSV Format
+        echo "#${batch_value_string}" >> "${batch_result_logfile_local}"
+
+        # Write Values to Global Log File in CSV Format
+        echo "${batch_value_string}" >> "${batch_result_logfile_global}"
 
         # Old Variant (prefer to use BASH join_array() instead since it's more readable)
         # echo "${batch_counter},${device_host},${device_guest},${flex_groups},${fio_test_type},${fio_block_size},${fio_queue_depth},${before_value_stat_host},${before_value_stat_host_gigabytes},${after_value_stat_host},${after_value_stat_host_gigabytes},${delta_value_stat_host},${delta_value_stat_host_gigabytes},${write_amplification_factor_stat},${before_value_smart_host},${before_value_smart_host_gigabytes},${after_value_smart_host},${after_value_smart_host_gigabytes},${delta_value_smart_host},${delta_value_smart_host_gigabytes},${before_value_guest},${before_value_guest_gigabytes},${after_value_guest},${after_value_guest_gigabytes},${delta_value_guest},${delta_value_guest_gigabytes},${write_amplification_factor_smart}" >> "${BENCHMARK_RESULTS_FOLDER}/$(basename ${device_host}).csv"
     done
+
+    # Save All HOST Information
+    save_all_host_info "after"
+    
+    # Save ALl GUEST Filesystem Properties
+    save_all_guest_info "after"
 
     # Vertical Space
     echo -e "\n\n"
