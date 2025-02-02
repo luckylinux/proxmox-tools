@@ -253,8 +253,11 @@ get_io_statistics() {
 
     if [[ "${lmode}" == "local" ]]
     then
+        # Echo for Debug
+        echo -e "\t\tChecking ${ldev}"
+
         if [[ "${ldev}" == "/dev/disk/by-id/"* ]] || [[ "${ldev}" == "/dev/mapper/"* ]] || [[ "${ldev}" == "/dev/loop/"* ]]
-        then
+        then       
             # Get the simplified Name that we can look in /sys/block/<dev>/stat
             ldev=$(basename "$(readlink \"${ldev}\")")
         fi
