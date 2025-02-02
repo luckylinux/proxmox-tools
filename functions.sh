@@ -1286,7 +1286,8 @@ run_test_iteration() {
         for batch_result_header in "${batch_result_headers[@]}"
         do
             # Evaluate Variable
-            eval "value=${batch_result_header}"
+            # eval "value=${batch_result_header}"
+            eval value="\$$(echo ${batch_result_header})"
 
             # Store Result into Array
             batch_result_values+=("${value}")
