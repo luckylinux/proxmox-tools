@@ -262,7 +262,7 @@ get_io_statistics() {
             echo -e "\t\tGet short Name for ${ldev} in LOCAL Mode" >> "${BENCHMARK_LOGFILE}"
 
             # Get the simplified Name that we can look in /sys/block/<dev>/stat
-            ldev=$(basename "$(readlink \"${ldev}\")")
+            ldev="$(basename $(readlink ${ldev}))"
 
             # Debug
             echo -e "\t\tShort Name resolved to ${ldev} in LOCAL Mode" >> "${BENCHMARK_LOGFILE}"
