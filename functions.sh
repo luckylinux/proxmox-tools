@@ -12,6 +12,15 @@ source "${toolpath}/config.sh"
 # shellcheck source=./constants.sh
 source "${toolpath}/constants.sh"
 
+# Join Array into String
+# https://stackoverflow.com/questions/1527049/how-can-i-join-elements-of-a-bash-array-into-a-delimited-string
+join_array() {
+  local d=${1-} f=${2-}
+  if shift 2; then
+    printf %s "$f" "${@/#/$d}"
+  fi
+}
+
 # Math Calculation
 math_calculation() {
     # Input Arguments
@@ -586,6 +595,9 @@ analyse_guest_device() {
 
 # Run Standard Test Batch
 run_test_batch() {
+    # Initialize Counter
+    batch_counter=1
+
     # For each Group passed on to mkfs.ext4 -G <#>
     for flex_group in "${BENCHMARK_VM_MKFS_EXT4_GROUPS[@]}"
     do
@@ -605,6 +617,9 @@ run_test_batch() {
 
                 # Run Benchmark
                 run_test_iteration "${flex_group}" "random" "${random_block_size}" "${random_queue_depth}"
+
+                # Increase Counter
+                batch_counter=$((batch_counter + 1))
             done
 
         done
@@ -622,6 +637,9 @@ run_test_batch() {
 
                 # Run Benchmark
                 run_test_iteration "${flex_group}" "throughput" "${throughput_block_size}" "${throughput_queue_depth}"
+
+                # Increase Counter
+                batch_counter=$((batch_counter + 1))
             done
         done
     done
@@ -630,10 +648,25 @@ run_test_batch() {
 # Run Test Iteration
 run_test_iteration() {
     # Input Arguments
-    local lgroups="$1"
-    local ltype="$2"
-    local lblocksize="$3"
-    local lqueuedepth="$4"
+    local flex_groups="$1"
+    local fio_test_type="$2"
+    local fio_block_size="$3"
+    local fio_queue_depth="$4"
+
+    # Define device_guest
+    device_guest="${BENCHMARK_VM_TEST_DEVICE}"
+
+    # Compute Short Names
+    device_host_short=$(basename "${device_host}")
+    device_guest_short=$(echo "${BENCHMARK_VM_TEST_DEVICE}" | sed -E "s|^.*?/([a-zA-Z0-9_-]+)|\1|g")
+
+    # Determine Log File
+    batch_result_logfile="${BENCHMARK_RESULTS_FOLDER}/${device_host_short}.csv"
+
+    # Create Folder for Details to be Stored
+    mkdir -p "${BENCHMARK_RESULTS_FOLDER}/${batch_counter}"
+    mkdir -p "${BENCHMARK_RESULTS_FOLDER}/${device_host_short}"
+    mkdir -p "${BENCHMARK_RESULTS_FOLDER}/${device_guest_short}"
 
     # Vertical Space
     echo -e "\n\n"
@@ -643,13 +676,24 @@ run_test_iteration() {
 
     echo -e ""
 
-    echo -e "Number of Groups (Flex Groups): ${lgroups}"
-    echo -e "Type of IO Test: ${ltype}"
-    echo -e "Block Size of IO Test: ${lblocksize}"
-    echo -e "Queue Depth of IO Test: ${lqueuedepth}"
+    echo -e "Number of Groups (Flex Groups): ${flex_groups}"
+    echo -e "Type of IO Test: ${fio_test_type}"
+    echo -e "Block Size of IO Test: ${fio_block_size}"
+    echo -e "Queue Depth of IO Test: ${fio_queue_depth}"
 
     # Vertical Space
     echo -e "\n\n"
+
+    # Init Test
+    # (ONLY if **NOT** using a Separate Device)
+    if [[ -z "${BENCHMARK_VM_TEST_DEVICE}" ]]
+    then
+        # Init Guest Test
+        init_guest_test
+    else
+        # Setup Guest Device
+        setup_guest_device "${flex_group}"
+    fi
 
     # Declare write_bytes_host_before_test as a (global) array that we will pass to analyse_host_devices() by reference
     unset write_bytes_stat_host_before_test
@@ -671,19 +715,33 @@ run_test_iteration() {
     # Vertical Space
     echo -e "\n\n"
 
-    # Value before Test
-    # write_bytes_before_test=$(get_io_statistics_write_bytes "${device}")
+    # Get GUEST Block Size
+    guest_device_block_size_return_value=$(run_command_inside_vm "blockdev --getbsz \"${device_guest}\"")
+    guest_device_block_size=$(echo "${guest_device_block_size_return_value}" | jq -r '."out-data"')
+    
+    # Get GUEST Logical Block (Sector) Size
+    guest_device_logical_block_size_return_value=$(run_command_inside_vm "blockdev --getss \"${device_guest}\"")
+    guest_device_logical_block_size=$(echo "${guest_device_logical_block_size_return_value}" | jq -r '."out-data"')
 
-    # Init Test
-    # (ONLY if **NOT** using a Separate Device)
-    if [[ -z "${BENCHMARK_VM_TEST_DEVICE}" ]]
-    then
-        # Init Guest Test
-        init_guest_test
-    else
-        # Setup Guest Device
-        setup_guest_device "${flex_group}"
-    fi
+    # Get GUEST Physical Block (Sector) Size
+    guest_device_physical_block_size_return_value=$(run_command_inside_vm "blockdev --getpbsz \"${device_guest}\"")
+    guest_device_physical_block_size=$(echo "${guest_device_physical_block_size_return_value}" | jq -r '."out-data"')
+
+    # Get HOST Block Size
+    host_device_block_size=$(blockdev --getbsz "${device_host}")
+
+    # Get HOST Logical Block (Sector) Size
+    host_device_physical_block_size=$(blockdev --getss "${device_host}")
+
+    # Get HOST Physical Block (Sector) Size
+    host_device_physical_block_size=$(blockdev --getpbsz "${device_host}")
+
+    # Save HOST Pool Properties
+    zfs get all -t volume ${BENCHMARK_VM_VIRTUAL_DISK} >> "${BENCHMARK_RESULTS_FOLDER}/host/zvol.properties"
+
+    # Save GUEST Filesystem Properties
+    guest_fs_properties_return_value=$(run_command_inside_vm "dumpe2fs -h \"${device_guest}\"")
+    echo "${guest_fs_properties_return_value}" | jq -r '."out-data"' >> "${BENCHMARK_RESULTS_FOLDER}/guest/ext4.properties"
 
     # Vertical Space
     echo -e "\n\n"
@@ -695,23 +753,23 @@ run_test_iteration() {
     fio_return_value=""
 
     # Decide whether to run Random IO or Throughput IO Benchmark
-    if [[ "${ltype}" == "random" ]]
+    if [[ "${fio_test_type}" == "random" ]]
     then
         # Run Benchmark and store Return Value in Variable
-        cmd_string=$(random_io "${lblocksize}" "${lqueuedepth}")
+        cmd_string=$(random_io "${fio_block_size}" "${fio_queue_depth}")
         echo "Running Command String: ${cmd_string}"
         # run_command_inside_vm "${cmd_string}"
         fio_return_value=$(run_command_inside_vm "${cmd_string}")
-    elif [[ "${ltype}" == "throughput" ]]
+    elif [[ "${fio_test_type}" == "throughput" ]]
     then
         # Run Benchmark and store Return Value in Variable
-        cmd_string=$(throughput_io "${lblocksize}" "${lqueuedepth}")
+        cmd_string=$(throughput_io "${fio_block_size}" "${fio_queue_depth}")
         echo "Running Command String: ${cmd_string}"
         # run_command_inside_vm "${cmd_string}"
         fio_return_value=$(run_command_inside_vm "${cmd_string}")
     else
         # Echo
-        echo "ERROR: Benchmark Type ${ltype} is NOT supported. Valid Choices are: [random, thoughput]. Aborting."]
+        echo "ERROR: Benchmark Type ${fio_test_type} is NOT supported. Valid Choices are: [random, thoughput]. Aborting."]
 
         # Abort
         exit 9
@@ -721,9 +779,7 @@ run_test_iteration() {
     echo "${fio_return_value}" | jq -r '."out-data"'
 
     # Kill all possible remaining <fio> Processes
-    run_command_inside_vm "killall fio"
-    run_command_inside_vm "killall fio"
-    run_command_inside_vm "killall fio"
+    run_command_inside_vm "killall fio; killall fio; killall fio;" > /dev/null 2>&1
 
     # Force Guest to write every pending Transaction to Disk
     sync_writes_guest
@@ -839,19 +895,120 @@ run_test_iteration() {
         echo -e "\t\tValue difference Benchmark on HOST: ${delta_value_smart_host} B (${delta_value_smart_host_gigabytes} GB)"
 
 
-        # Define device_guest for logging
-        device_guest="${BENCHMARK_VM_TEST_DEVICE}"
+        # Define Batch Result Headers Names Format
+        unset batch_result_headers
+        batch_result_headers=()
+
+        batch_result_headers+=("batch_counter")
+
+        batch_result_headers+=("device_host")
+        batch_result_headers+=("device_guest")
+        
+        batch_result_headers+=("flex_groups")
+        batch_result_headers+=("fio_test_type")
+        batch_result_headers+=("fio_block_size")
+        batch_result_headers+=("fio_queue_depth")
+
+        batch_result_headers+=("host_device_block_size")
+        batch_result_headers+=("host_device_physical_block_size")
+        batch_result_headers+=("host_device_physical_block_size")
+
+        batch_result_headers+=("guest_device_block_size")
+        batch_result_headers+=("guest_device_logical_block_size")
+        batch_result_headers+=("guest_device_physical_block_size")
+
+        batch_result_headers+=("before_value_stat_host")
+        batch_result_headers+=("before_value_stat_host_gigabytes")
+        batch_result_headers+=("after_value_stat_host")
+        batch_result_headers+=("after_value_stat_host_gigabytes")
+        batch_result_headers+=("delta_value_stat_host")
+        batch_result_headers+=("delta_value_stat_host_gigabytes")
+        
+        batch_result_headers+=("before_value_smart_host")
+        batch_result_headers+=("before_value_smart_host_gigabytes")
+        batch_result_headers+=("after_value_smart_host")
+        batch_result_headers+=("after_value_smart_host_gigabytes")
+        batch_result_headers+=("delta_value_smart_host")
+        batch_result_headers+=("delta_value_smart_host_gigabytes")
+
+        batch_result_headers+=("before_value_guest")
+        batch_result_headers+=("before_value_guest_gigabytes")
+        batch_result_headers+=("after_value_guest")
+        batch_result_headers+=("after_value_guest_gigabytes")
+        batch_result_headers+=("delta_value_guest")
+        batch_result_headers+=("delta_value_guest_gigabytes")
+
+        batch_result_headers+=("write_amplification_factor_stat")
+        batch_result_headers+=("write_amplification_factor_smart")
+
+        batch_result_headers+=("")
+        batch_result_headers+=("")
+        batch_result_headers+=("")
+        batch_result_headers+=("")
+        batch_result_headers+=("")
+        batch_result_headers+=("")
+        batch_result_headers+=("")
+        batch_result_headers+=("")
+        batch_result_headers+=("")
+        batch_result_headers+=("")
+        batch_result_headers+=("")
+        
+        
+        
+        
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+
+
+        
 
         # Write Results to File in CSV Format
         # (only use the 1st Physical Device to Save Data)
         if [[ ! -f "" ]]
         then
-            # Add Headers
-            echo "# device_host,device_guest,flex_groups,fio_test_type,fio_block_size,fio_queue_depth,before_value_stat_host,before_value_stat_host_gigabytes,after_value_stat_host,after_value_stat_host_gigabytes,delta_value_stat_host,delta_value_stat_host_gigabytes,write_amplification_factor_stat,before_value_smart_host,before_value_smart_host_gigabytes,after_value_smart_host,after_value_smart_host_gigabytes,delta_value_smart_host,delta_value_smart_host_gigabytes,before_value_guest,before_value_guest_gigabytes,after_value_guest,after_value_guest_gigabytes,delta_value_guest,delta_value_guest_gigabytes,write_amplification_factor_smart" >> "${BENCHMARK_RESULTS_FOLDER}/$(basename ${device_host}).csv"
+            # Get Header String from Array
+            batch_header_string=$(join_array "," ${batch_result_headers[*]})
+
+            # Write Headers to File
+            echo "#${batch_header_string}" >> "${batch_result_logfile}"
+
+            # Old Variant (prefer to use BASH join_array() instead since it's more readable)
+            # echo "# id,device_host,device_guest,flex_groups,fio_test_type,fio_block_size,fio_queue_depth,before_value_stat_host,before_value_stat_host_gigabytes,after_value_stat_host,after_value_stat_host_gigabytes,delta_value_stat_host,delta_value_stat_host_gigabytes,write_amplification_factor_stat,before_value_smart_host,before_value_smart_host_gigabytes,after_value_smart_host,after_value_smart_host_gigabytes,delta_value_smart_host,delta_value_smart_host_gigabytes,before_value_guest,before_value_guest_gigabytes,after_value_guest,after_value_guest_gigabytes,delta_value_guest,delta_value_guest_gigabytes,write_amplification_factor_smart" >> "${BENCHMARK_RESULTS_FOLDER}/$(basename ${device_host}).csv"
         fi
 
-        # Add Values
-        echo "${device_host},${device_guest},${lgroups},${ltype},${lblocksize},${lqueuedepth},${before_value_stat_host},${before_value_stat_host_gigabytes},${after_value_stat_host},${after_value_stat_host_gigabytes},${delta_value_stat_host},${delta_value_stat_host_gigabytes},${write_amplification_factor_stat},${before_value_smart_host},${before_value_smart_host_gigabytes},${after_value_smart_host},${after_value_smart_host_gigabytes},${delta_value_smart_host},${delta_value_smart_host_gigabytes},${before_value_guest},${before_value_guest_gigabytes},${after_value_guest},${after_value_guest_gigabytes},${delta_value_guest},${delta_value_guest_gigabytes},${write_amplification_factor_smart}" >> "${BENCHMARK_RESULTS_FOLDER}/$(basename ${device_host}).csv"
+        # Add Values in Array Format
+        unset batch_result_values
+        batch_result_values=()
+
+        for batch_result_header in "${batch_result_headers[@]}"
+        do
+            # Evaluate Variable
+            eval "value=${batch_result_header}"
+
+            # Store Result into Array
+            batch_result_values+=("${value}")
+        done
+
+        # Get Value String from Array
+        batch_value_string=$(join_array "," ${batch_result_values[*]})
+
+        # Write Values to File
+        echo "${batch_value_string}" >> "${batch_result_logfile}"
+
+        # Old Variant (prefer to use BASH join_array() instead since it's more readable)
+        # echo "${batch_counter},${device_host},${device_guest},${flex_groups},${fio_test_type},${fio_block_size},${fio_queue_depth},${before_value_stat_host},${before_value_stat_host_gigabytes},${after_value_stat_host},${after_value_stat_host_gigabytes},${delta_value_stat_host},${delta_value_stat_host_gigabytes},${write_amplification_factor_stat},${before_value_smart_host},${before_value_smart_host_gigabytes},${after_value_smart_host},${after_value_smart_host_gigabytes},${delta_value_smart_host},${delta_value_smart_host_gigabytes},${before_value_guest},${before_value_guest_gigabytes},${after_value_guest},${after_value_guest_gigabytes},${delta_value_guest},${delta_value_guest_gigabytes},${write_amplification_factor_smart}" >> "${BENCHMARK_RESULTS_FOLDER}/$(basename ${device_host}).csv"
     done
 
     # Vertical Space
@@ -864,7 +1021,7 @@ setup_guest_device() {
 
     # Flex Groups as fed to mkfs.ext4 -G <#>
     # HyperV Reccomends 4096 since the Host Block Size on NTFS is quite Big (1MB)
-    local lgroups="$1"
+    local flex_groups="$1"
 
     # Block Size
     # local lblocksize=${2-""}
@@ -892,7 +1049,7 @@ setup_guest_device() {
     run_command_inside_vm chattr +i "${BENCHMARK_VM_TEST_PATH}" > /dev/null 2>&1
 
     # Format Device
-    run_command_inside_vm mkfs.ext4 -F -G "${lgroups}" "${BENCHMARK_VM_TEST_DEVICE}" > /dev/null 2>&1
+    run_command_inside_vm mkfs.ext4 -F -G "${flex_groups}" "${BENCHMARK_VM_TEST_DEVICE}" > /dev/null 2>&1
 
     # Mount Device
     run_command_inside_vm mount "${BENCHMARK_VM_TEST_DEVICE}" "${BENCHMARK_VM_TEST_PATH}" > /dev/null 2>&1

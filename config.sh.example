@@ -33,6 +33,9 @@ BENCHMARK_LOGFILE="${BENCHMARK_RESULTS_FOLDER}/debug.log"
 # Guest ID
 BENCHMARK_VM_ID=""
 
+# Guest Virtual Disk
+BENCHMARK_VM_VIRTUAL_DISK="rpool/data/vm-XXX-disk-Y"
+
 # Maximum Attempts if QEMU Agent doesn't reply Immediately
 # This can be useful for working around "QEMU guest agent is not running" (Error Return Code 255)
 BENCHMARK_VM_MAX_ATTEMPS=10
