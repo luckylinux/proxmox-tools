@@ -666,6 +666,43 @@ analyse_host_devices() {
    done
 }
 
+# Analyze Host ZVOL
+analyse_host_zvol() {
+   # The return Array is passed by nameref
+   # Reference to output array
+   declare -n lreturnarray_stat="${1}"
+
+   # Echo 
+   echo "Analyse Host ZVOL"
+
+   # Predeclare Variables
+   local lzvol
+
+   # Set ZVOL to Virtual Disk
+   lzvol="${BENCHMARK_VM_VIRTUAL_DISK}"
+
+   #for lzvol in "${BENCHMARK_HOST_DEVICES[@]}"
+   #do
+       # Echo
+       echo -e "\t[HOST] Analyse ZVOL ${lzvol}"
+
+       # Get Value using Linux Kernel Statistics
+       write_bytes_stat=$(get_io_statistics_write_bytes "${lzvol}" "local")
+
+       # Convert to gigabytes
+       write_gigabytes_stat=$(convert_bytes_to_gigabytes "${write_bytes_stat}")
+
+       # Store in Return Array
+       lreturnarray_stat+=("${write_bytes_stat}")
+
+       # Echo
+       echo -e "\t\tWrite Bytes for Device using Linux Kernel Statistics for ${lzvol}: ${write_bytes_stat} B (${write_gigabytes_stat} GB)"
+
+       # Echo
+       echo -e "\n\n"
+   # done
+}
+
 # Analyze Guest Device
 analyse_guest_device() {
    # The return Array is passed by nameref
@@ -710,6 +747,16 @@ analyse_guest_device() {
 run_test_batch() {
     # Initialize Counter
     batch_counter=1
+
+    # Check that Compression is DISABLED on the Dataset
+    # Otherwise we cannot properly estimate Writes
+    zvol_compression_setting=$(zfs get compression -H -o value -t volume "${BENCHMARK_VM_VIRTUAL_DISK}")
+    if [[ "${zvol_compression_setting}" != "off" ]]
+    then
+        echo -e "FATAL: Host Virtual Disk ${BENCHMARK_VM_VIRTUAL_DISK} has ZFS Compression Enabled (${zvol_compression_setting})"
+        echo -e "       If Compression is Enabled, we cannot accurately evaluate the Write Amplification)"
+        exit 9
+    fi
 
     # For each Group passed on to mkfs.ext4 -G <#>
     for flex_group in "${BENCHMARK_VM_MKFS_EXT4_GROUPS[@]}"
@@ -879,10 +926,15 @@ run_test_iteration() {
     # Declare write_bytes_host_before_test as a (global) array that we will pass to analyse_host_devices() by reference
     unset write_bytes_stat_host_before_test
     declare -a write_bytes_stat_host_before_test
+
     unset write_bytes_smart_host_before_test
     declare -a write_bytes_smart_host_before_test
+
     unset write_bytes_guest_before_test
     declare -a write_bytes_guest_before_test
+
+    unset write_bytes_stat_zvol_before_test
+    declare -a write_bytes_stat_zvol_before_test
 
     # Analyse Guest Devices before Test
     analyse_guest_device write_bytes_guest_before_test
@@ -892,6 +944,7 @@ run_test_iteration() {
 
     # Analyse Host Devices before Test
     analyse_host_devices write_bytes_stat_host_before_test write_bytes_smart_host_before_test
+    analyse_host_zvol write_bytes_stat_zvol_before_test
 
     # Vertical Space
     echo -e "\n\n"
@@ -971,11 +1024,15 @@ run_test_iteration() {
     unset write_bytes_smart_host_after_test
     declare -a write_bytes_smart_host_after_test
 
+    unset write_bytes_stat_zvol_after_test
+    declare -a write_bytes_stat_zvol_after_test
+
     unset write_bytes_guest_after_test
     declare -a write_bytes_guest_after_test
 
     # Analyse Host Devices after Test
     analyse_host_devices write_bytes_stat_host_after_test write_bytes_smart_host_after_test
+    analyse_host_zvol write_bytes_stat_zvol_after_test 
 
     # Vertical Space
     echo -e "\n"
@@ -1008,6 +1065,41 @@ run_test_iteration() {
     echo -e "\tValue after Benchmark on GUEST: ${after_value_guest} B (${after_value_guest_gigabytes} GB)"
     echo -e "\tValue difference Benchmark on GUEST: ${delta_value_guest} B (${delta_value_guest_gigabytes} GB)"
 
+    # 
+
+    # Before
+    before_value_zvol=${write_bytes_stat_zvol_before_test[0]}
+
+    # After
+    after_value_zvol=${write_bytes_stat_zvol_after_test[0]}
+
+    # Delta
+    delta_value_zvol=$(math_calculation "${after_value_zvol} - ${before_value_zvol}")
+
+    # Convert into GB
+    before_value_zvol_gigabytes=$(convert_bytes_to_gigabytes "${before_value_zvol}")
+    after_value_zvol_gigabytes=$(convert_bytes_to_gigabytes "${after_value_zvol}")
+    delta_value_zvol_gigabytes=$(convert_bytes_to_gigabytes "${delta_value_zvol}")
+
+    # Echo
+    echo -e "Details of Data written on ZVOL"
+    echo -e "\tValue before Benchmark on ZVOL: ${before_value_zvol} B (${before_value_zvol_gigabytes} GB)"
+    echo -e "\tValue after Benchmark on ZVOL: ${after_value_zvol} B (${after_value_zvol_gigabytes} GB)"
+    echo -e "\tValue difference Benchmark on ZVOL: ${delta_value_zvol} B (${delta_value_zvol_gigabytes} GB)"
+
+    # Vertical Space
+    echo -e "\n\n"
+
+    # Compute Write Amplification from GUEST to ZVOL
+    write_amplification_factor_guest_to_zvol_stat=$(math_calculation "${delta_value_zvol} / ${delta_value_guest}")
+
+    # Echo
+    echo -e "Write Amplification from GUEST to ZVOL"
+    echo -e "Using stat: ${write_amplification_factor_guest_to_zvol_stat}"
+    
+    # Vertical Space
+    echo -e "\n\n"
+
     # Calculate Difference on Host for each Device
     number_items=${#write_bytes_stat_host_after_test[@]}
     for index in $(seq 0 $((${number_items}-1)))
@@ -1037,7 +1129,7 @@ run_test_iteration() {
         delta_value_stat_host=$(math_calculation "${after_value_stat_host} - ${before_value_stat_host}")
 
         # Calculate Write Amplification (stat)
-        write_amplification_factor_stat=$(math_calculation "${delta_value_stat_host} / ${delta_value_guest}")
+        write_amplification_factor_guest_to_host_stat=$(math_calculation "${delta_value_stat_host} / ${delta_value_guest}")
 
         # Convert into GB
         before_value_stat_host_gigabytes=$(convert_bytes_to_gigabytes "${before_value_stat_host}")
@@ -1055,7 +1147,7 @@ run_test_iteration() {
         delta_value_smart_host=$(math_calculation "${after_value_smart_host} - ${before_value_smart_host}")
 
         # Calculate Write Amplification (smart)
-        write_amplification_factor_smart=$(math_calculation "${delta_value_smart_host} / ${delta_value_guest}")
+        write_amplification_factor_guest_to_host_smart=$(math_calculation "${delta_value_smart_host} / ${delta_value_guest}")
 
         # Convert into GB
         before_value_smart_host_gigabytes=$(convert_bytes_to_gigabytes "${before_value_smart_host}")
@@ -1067,12 +1159,12 @@ run_test_iteration() {
         # Echo
         echo -e "Write Amplification from GUEST to HOST for Device ${device_host}"
         
-        echo -e "\tUsing stat: ${write_amplification_factor_stat}"
+        echo -e "\tUsing stat: ${write_amplification_factor_guest_to_host_stat}"
         echo -e "\t\tValue before Benchmark on HOST: ${before_value_stat_host} B (${before_value_stat_host_gigabytes} GB)"
         echo -e "\t\tValue after Benchmark on HOST: ${after_value_stat_host} B (${after_value_stat_host_gigabytes} GB)"
         echo -e "\t\tValue difference Benchmark on HOST: ${delta_value_stat_host} B (${delta_value_stat_host_gigabytes} GB)"
 
-        echo -e "\tUsing smartmontools: ${write_amplification_factor_smart}"
+        echo -e "\tUsing smartmontools: ${write_amplification_factor_guest_to_host_smart}"
         echo -e "\t\tValue before Benchmark on HOST: ${before_value_smart_host} B (${before_value_smart_host_gigabytes} GB)"
         echo -e "\t\tValue after Benchmark on HOST: ${after_value_smart_host} B (${after_value_smart_host_gigabytes} GB)"
         echo -e "\t\tValue difference Benchmark on HOST: ${delta_value_smart_host} B (${delta_value_smart_host_gigabytes} GB)"
@@ -1114,6 +1206,13 @@ run_test_iteration() {
         batch_result_headers+=("delta_value_smart_host")
         batch_result_headers+=("delta_value_smart_host_gigabytes")
 
+        batch_result_headers+=("before_value_zvol")
+        batch_result_headers+=("before_value_zvol_gigabytes")
+        batch_result_headers+=("after_value_zvol")
+        batch_result_headers+=("after_value_zvol_gigabytes")
+        batch_result_headers+=("delta_value_zvol")
+        batch_result_headers+=("delta_value_zvol_gigabytes")
+
         batch_result_headers+=("before_value_guest")
         batch_result_headers+=("before_value_guest_gigabytes")
         batch_result_headers+=("after_value_guest")
@@ -1121,10 +1220,10 @@ run_test_iteration() {
         batch_result_headers+=("delta_value_guest")
         batch_result_headers+=("delta_value_guest_gigabytes")
 
-        batch_result_headers+=("write_amplification_factor_stat")
-        batch_result_headers+=("write_amplification_factor_smart")
+        batch_result_headers+=("write_amplification_factor_guest_to_host_stat")
+        batch_result_headers+=("write_amplification_factor_guest_to_host_smart")
+        batch_result_headers+=("write_amplification_factor_guest_to_zvol_stat")
 
-        # batch_result_headers+=("")
         # batch_result_headers+=("")
         # batch_result_headers+=("")
         # batch_result_headers+=("")
