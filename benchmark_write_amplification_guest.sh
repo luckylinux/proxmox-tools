@@ -27,6 +27,7 @@ mkdir -p "${BENCHMARK_RESULTS_FOLDER}"
 # Create easy Symlink
 parent_folder=$(dirname "${BENCHMARK_RESULTS_FOLDER}")
 if [[ -L "${parent_folder}/latest" ]]
+then
     # Remote existing Link
     rm "${parent_folder}/latest"
 fi
