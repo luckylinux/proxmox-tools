@@ -15,6 +15,9 @@ PROGRAM_COPY_BLOCKS="ddrescue"
 ############### BENCHMARK OPTIONS ################
 ##################################################
 
+# Debug Mode
+BENCHMARK_DEBUG_ENABLE=1
+
 # Test Path
 BENCHMARK_VM_TEST_PATH="/usr/src/stress-io/"
 

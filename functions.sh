@@ -12,6 +12,12 @@ source "${toolpath}/config.sh"
 # shellcheck source=./constants.sh
 source "${toolpath}/constants.sh"
 
+# Enable Debug if Configured
+if [[ ${BENCHMARK_DEBUG_ENABLE} -eq 1 ]]
+then
+    set -x
+fi
+
 # Join Array into String
 # https://stackoverflow.com/questions/1527049/how-can-i-join-elements-of-a-bash-array-into-a-delimited-string
 join_array() {

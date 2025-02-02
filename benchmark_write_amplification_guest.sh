@@ -15,6 +15,12 @@ source "${toolpath}/config.sh"
 # shellcheck source=./functions.sh
 source "${toolpath}/functions.sh"
 
+# Enable Debug if Configured
+if [[ ${BENCHMARK_DEBUG_ENABLE} -eq 1 ]]
+then
+    set -x
+fi
+
 # Create Results Folder if not exist yet
 mkdir -p "${BENCHMARK_RESULTS_FOLDER}"
 
