@@ -1027,6 +1027,9 @@ run_test_iteration() {
     # Kill all possible remaining <fio> Processes
     run_command_inside_vm "killall fio; killall fio; killall fio;" > /dev/null 2>&1
 
+    # Echo
+    echo -e "Force Write every pending Transaction to Disk"
+
     # Force Guest to write every pending Transaction to Disk
     sync_writes_guest
 
