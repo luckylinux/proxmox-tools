@@ -234,7 +234,7 @@ get_bytes_number() {
     fi
 
     # Return Value
-    return "${lresult}"
+    echo "${lresult}"
 }
 
 # Random IO Test Function
