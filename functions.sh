@@ -1,6 +1,8 @@
+#!/bin/bash
+
 # Determine toolpath if not set already
 relativepath="./" # Define relative path to go from this script to the root level of the tool
-if [[ ! -v toolpath ]]; then scriptpath=$(cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd ); toolpath=$(realpath --canonicalize-missing ${scriptpath}/${relativepath}); fi
+if [[ ! -v toolpath ]]; then scriptpath=$(cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd ); toolpath=$(realpath --canonicalize-missing "${scriptpath}/${relativepath}"); fi
 
 # Load Configuration
 # shellcheck source=./config.sh
@@ -32,10 +34,11 @@ add_separator() {
    local lrows=${2-"1"}
 
    # Get width of Terminal
-   local lwidth=$(tput cols)
+   local lwidth
+   lwidth=$(tput cols)
 
    # Repeat Character
-   for r in $(seq 1 1 ${lrows})
+   for r in $(seq 1 1 "${lrows}")
    do
       repeat_character "${lcharacter}" "${lwidth}"
    done
@@ -72,26 +75,34 @@ add_description() {
    ldescription=" ${ldescription} "
 
    # Get width of Terminal
-   local lwidth=$(tput cols)
+   local lwidth
+   lwidth=$(tput cols)
 
    # Get length of Description
    local llengthdescription=${#ldescription}
 
    # Get width of Terminal
-   local lwidth=$(tput cols)
+   local lwidth
+   lwidth=$(tput cols)
 
    # Subtract Description from Terminal Width
-   local llengthseparator=$((lwidth - llengthdescription))
+   local llengthseparator
+   llengthseparator=$((lwidth - llengthdescription))
 
    # Divide by two
-   local llengtheachseparator=$(echo "${llengthseparator} / ( 2 )" | bc -l)
+   local llengtheachseparator
+   llengtheachseparator=$(echo "${llengthseparator} / ( 2 )" | bc -l)
 
    # Remainer
-   local lremainer=$((llengthseparator % 2))
-   local lextrastr=$(repeat_character "${lcharacter}" "${lremainer}")
+   local lremainer
+   lremainer=$((llengthseparator % 2))
+
+   local lextrastr
+   lextrastr=$(repeat_character "${lcharacter}" "${lremainer}")
 
    # Get String of Characters for BEFORE and AFTER the Description
-   local lseparator=$(repeat_character "${lcharacter}" "${llengtheachseparator}")
+   local lseparator
+   lseparator=$(repeat_character "${lcharacter}" "${llengtheachseparator}")
 
    # Print Description Line
    echo "${lseparator}${ldescription}${lextrastr}${lseparator}"
@@ -245,7 +256,7 @@ get_io_statistics() {
         if [[ "${ldev}" == "/dev/disk/by-id/"* ]] || [[ "${ldev}" == "/dev/mapper/"* ]] || [[ "${ldev}" == "/dev/loop/"* ]]
         then
             # Get the simplified Name that we can look in /sys/block/<dev>/stat
-            ldev=$(basename $(readlink "${ldev}"))
+            ldev=$(basename "$(readlink \"${ldev}\")")
         fi
 
         # Return Value
@@ -269,7 +280,7 @@ get_io_statistics() {
        # echo "Run Command on Host: echo ${lcmd_return_value} | jq -r '.\"out-data\"'"
 
        # Return Result from Inside
-       echo ${lcmd_return_value} | jq -r '."out-data"'
+       echo "${lcmd_return_value}" | jq -r '."out-data"'
     else
         # Echo
         echo "ERROR: Mode ${lmode} is NOT supported. Mode must be one of: [local,remote]. Aborting"
@@ -379,6 +390,30 @@ get_io_statistics_write_bytes() {
 
    # Calculate Bytes Value
    echo "${sectors} * 512" | bc
+}
+
+# Force Guest to write every pending Transaction to Disk
+sync_writes_guest() {
+    # Echo
+    echo "Force Guest to write every pending Transaction to Disk using `sync`"
+
+    # Run Command
+    run_command_inside_vm "sync"
+
+    # Wait a bit
+    sleep 5
+}
+
+# Force Host to write every pending Transaction to Disk
+sync_writes_host() {
+    # Echo
+    echo "Force Host to write every pending Transaction to Disk using `sync`"
+
+    # Run Command
+    sync
+
+    # Wait a bit
+    sleep 5
 }
 
 # Analyze Host Device
@@ -572,6 +607,9 @@ run_test_iteration() {
     # Run Benchmark inside VM
     echo -e "Writing ${BENCHMARK_VM_DEFAULT_SIZE} inside VM"
 
+    # Predeclare Variable
+    fio_return_value=""
+
     # Decide whether to run Random IO or Throughput IO Benchmark
     if [[ "${ltype}" == "random" ]]
     then
@@ -579,14 +617,14 @@ run_test_iteration() {
         cmd_string=$(random_io "${lblocksize}" "${lqueuedepth}")
         echo "Running Command String: ${cmd_string}"
         # run_command_inside_vm "${cmd_string}"
-        cmd_return_value=$(run_command_inside_vm "${cmd_string}")
+        fio_return_value=$(run_command_inside_vm "${cmd_string}")
     elif [[ "${ltype}" == "throughput" ]]
     then
         # Run Benchmark and store Return Value in Variable
         cmd_string=$(throughput_io "${lblocksize}" "${lqueuedepth}")
         echo "Running Command String: ${cmd_string}"
         # run_command_inside_vm "${cmd_string}"
-        cmd_return_value=$(run_command_inside_vm "${cmd_string}")
+        fio_return_value=$(run_command_inside_vm "${cmd_string}")
     else
         # Echo
         echo "ERROR: Benchmark Type ${ltype} is NOT supported. Valid Choices are: [random, thoughput]. Aborting."]
@@ -595,8 +633,14 @@ run_test_iteration() {
         exit 9
     fi
 
-    # Flush Writes
-    cmd_return_value=$(run_command_inside_vm "sync")
+    # Get Returned Value
+    echo "${fio_return_value}" | jq -r '."out-data"'
+
+    # Force Guest to write every pending Transaction to Disk
+    cmd_return_value=$(sync_writes_guest)
+
+    # Force Host to write every pending Transaction to Disk
+    cmd_return_value=$(sync_writes_host)
 
     # Vertical Space
     echo -e "\n\n"
@@ -742,6 +786,7 @@ setup_guest_device() {
     run_command_inside_vm "if mountpoint -q \"${BENCHMARK_VM_TEST_PATH}\"; then umount \"${BENCHMARK_VM_TEST_PATH}\"; fi" > /dev/null 2>&1
 
     # Make sure to UNMOUNT the Device before starting
+    # shellcheck disable=SC2154
     run_command_inside_vm "device_short_name=$(readlink \"${BENCHMARK_VM_TEST_DEVICE}\"); if [[ $(cat /proc/mounts | grep \"${device_short_name}\" | wc -l) -ge 1 ]]; then umount \"${BENCHMARK_VM_TEST_DEVICE}\"; fi" > /dev/null 2>&1
 
     # Make Mountpoint Mutable (again)
