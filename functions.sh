@@ -731,7 +731,7 @@ run_test_iteration() {
     mkdir -p "${BENCHMARK_RESULTS_FOLDER}/${batch_counter}"
     mkdir -p "${BENCHMARK_RESULTS_FOLDER}/${batch_counter}/host"
     mkdir -p "${BENCHMARK_RESULTS_FOLDER}/${batch_counter}/guest"
-    mkdir -p "${BENCHMARK_RESULTS_FOLDER}/${batch_counter}/guest/${device_guest_short}"
+    # mkdir -p "${BENCHMARK_RESULTS_FOLDER}/${batch_counter}/guest/${device_guest_short}"
     
     # Vertical Space
     echo -e "\n\n"
