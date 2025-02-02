@@ -746,6 +746,18 @@ run_test_iteration() {
     # Vertical Space
     echo -e "\n\n"
 
+    # Save All HOST Information
+    save_all_host_info "setup"
+    
+    # Save All GUEST Filesystem Properties
+    save_all_guest_info "setup"
+
+    # Force Guest to write every pending Transaction to Disk
+    sync_writes_guest
+
+    # Force Host to write every pending Transaction to Disk
+    sync_writes_host
+
     # Init Test
     # (ONLY if **NOT** using a Separate Device)
     if [[ -z "${BENCHMARK_VM_TEST_DEVICE}" ]]
@@ -1113,4 +1125,10 @@ setup_guest_device() {
 
     # Mount Device
     run_command_inside_vm mount "${BENCHMARK_VM_TEST_DEVICE}" "${BENCHMARK_VM_TEST_PATH}" > /dev/null 2>&1
+
+    # Make sure Guest has written everything to Device
+    sync_writes_guest
+
+    # Make sure Host has written everything to Device
+    sync_writes_host
 }
