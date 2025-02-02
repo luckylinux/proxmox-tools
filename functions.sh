@@ -1022,7 +1022,11 @@ run_test_iteration() {
     fi
 
     # Get Returned Value
-    echo "${fio_return_value}" | jq -r '."out-data"'
+    fio_written_data_mebibytes=$(echo "${fio_return_value}" | jq -r '."out-data"' | sed -E "s|^\s*?WRITE: bw=.*?, io=([0-9]+)MiB \(([0-9]+)MB\),.*$|\1|g")
+    fio_written_data_megabytes=$(echo "${fio_return_value}" | jq -r '."out-data"' | sed -E "s|^\s*?WRITE: bw=.*?, io=([0-9]+)MiB \(([0-9]+)MB\),.*$|\2|g")
+
+    fio_written_data_bytes=$(convert_megabytes_to_bytes "${fio_written_data_megabytes}")
+    fio_written_data_gigabytes=$(convert_bytes_to_gigabytes "${fio_written_data_bytes}")
 
     # Kill all possible remaining <fio> Processes
     run_command_inside_vm "killall fio; killall fio; killall fio;" > /dev/null 2>&1
@@ -1208,6 +1212,9 @@ run_test_iteration() {
         batch_result_headers+=("fio_test_type")
         batch_result_headers+=("fio_block_size")
         batch_result_headers+=("fio_queue_depth")
+
+        batch_result_headers+=("fio_written_data_bytes")
+        batch_result_headers+=("fio_written_data_gigabytes")
 
         batch_result_headers+=("host_device_block_size")
         batch_result_headers+=("host_device_logical_block_size")
