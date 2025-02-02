@@ -292,7 +292,7 @@ throughput_io() {
     lnumfiles=$(echo "${lnumfiles}" | awk '{print int($1)}')
 
     # Test Command
-    echo "sudo fio --name=write_throughput --directory=\"${BENCHMARK_VM_TEST_PATH}\" --numjobs=16 --size=\"${lsize}\" --runtime=600s --ramp_time=2s --ioengine=libaio --direct=1 --verify=0 --bs=\"${lblocksize}\" --iodepth=\"${lqueuedepth}\" --rw=write --group_reporting=1"
+    echo "sudo fio --name=write_throughput --directory=\"${BENCHMARK_VM_TEST_PATH}\" --numjobs=1 --size=\"${lsize}\" --cpus_allowed=0 --runtime=600s --ramp_time=2s --ioengine=libaio --direct=1 --buffered=0 --verify=0 --bs=\"${lblocksize}\" --iodepth=\"${lqueuedepth}\" --rw=write --group_reporting=1"
 }
 
 # Convert Kilobytes to Bytes
