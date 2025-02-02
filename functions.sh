@@ -710,7 +710,7 @@ save_all_guest_info() {
     guest_fs_properties_return_value=$(run_command_inside_vm "dumpe2fs -h \"${device_guest}\"")
 
     # Save Guest Filesystem Properties to File
-    echo "${guest_fs_properties_return_value}" | jq -r '."out-data"' >> "${lbasefolder}/guest/ext4.properties"
+    echo "${guest_fs_properties_return_value}" | jq -r '."out-data"' >> "${lbasefolder}/ext4.properties"
 }
 
 # Run Test Iteration
