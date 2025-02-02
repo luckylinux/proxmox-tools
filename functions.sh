@@ -1377,4 +1377,7 @@ setup_guest_device() {
 
     # Make sure Host has written everything to Device
     sync_writes_host
+
+    # Vertical Space
+    echo -e "\n\n"
 }
