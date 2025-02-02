@@ -766,6 +766,17 @@ run_test_batch() {
         exit 9
     fi
 
+    # Get Number of Variables
+    number_iterations_ext4_flex_groups=${#BENCHMARK_VM_MKFS_EXT4_GROUPS[@]}
+    number_iterations_fio_random_block_size=${#BENCHMARK_VM_FIO_RANDOM_BLOCK_SIZE[@]}
+    number_iterations_fio_random_queue_depth=${#BENCHMARK_VM_FIO_RANDOM_QUEUE_DEPTH[@]}
+    number_iterations_fio_throughput_block_size=${#BENCHMARK_VM_FIO_THROUGHPUT_BLOCK_SIZE[@]}
+    number_iterations_fio_throughput_queue_depth=${#BENCHMARK_VM_FIO_THROUGHPUT_QUEUE_DEPTH[@]}
+
+    # Calculate Total Number of Iterations
+    batch_total_iterations=$(math_calculation "${number_iterations_ext4_flex_groups} * (${number_iterations_fio_random_block_size} * ${number_iterations_fio_random_queue_depth} + ${number_iterations_fio_throughput_block_size} * ${number_iterations_fio_throughput_queue_depth})")
+    batch_total_iterations=$(echo "${batch_total_iterations}" | awk '{print int($1)}')
+
     # For each Group passed on to mkfs.ext4 -G <#>
     for flex_group in "${BENCHMARK_VM_MKFS_EXT4_GROUPS[@]}"
     do
@@ -903,6 +914,10 @@ run_test_iteration() {
 
     # Echo
     add_section "#" "2" "Run Test Iteration"
+
+    echo -e ""
+
+    echo -e "Iteration: ${batch_counter}/${batch_total_iterations}"
 
     echo -e ""
 
