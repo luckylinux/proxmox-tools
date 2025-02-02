@@ -74,9 +74,12 @@ BENCHMARK_VM_FIO_THROUGHPUT_BLOCK_SIZE+=("1M")
 BENCHMARK_VM_FIO_THROUGHPUT_QUEUE_DEPTH=()
 BENCHMARK_VM_FIO_THROUGHPUT_QUEUE_DEPTH+=("32")
 
-# Host Devices to be Analyzed
-BENCHMARK_HOST_DEVICES=()
-BENCHMARK_HOST_DEVICES+=("/dev/disk/by-id/ata-XXX")
-BENCHMARK_HOST_DEVICES+=("/dev/disk/by-id/ata-YYY")
-BENCHMARK_HOST_DEVICES+=("/dev/mapper/ata-XXX_crypt")
-BENCHMARK_HOST_DEVICES+=("/dev/mapper/ata-YYY_crypt")
+# Host Devices to be Analyzed (MUST be overwritten in config.sh)
+if [[ ! -v BENCHMARK_HOST_DEVICES ]]
+then
+    BENCHMARK_HOST_DEVICES=()
+    BENCHMARK_HOST_DEVICES+=("/dev/disk/by-id/ata-XXX")
+    BENCHMARK_HOST_DEVICES+=("/dev/disk/by-id/ata-YYY")
+    BENCHMARK_HOST_DEVICES+=("/dev/mapper/ata-XXX_crypt")
+    BENCHMARK_HOST_DEVICES+=("/dev/mapper/ata-YYY_crypt")
+fi
