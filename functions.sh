@@ -1022,8 +1022,8 @@ run_test_iteration() {
     fi
 
     # Get Returned Value
-    fio_written_data_mebibytes=$(echo "${fio_return_value}" | jq -r '."out-data"' | sed -E "s|^\s*?WRITE: bw=.*?, io=([0-9]+)MiB \(([0-9]+)MB\),.*$|\1|g")
-    fio_written_data_megabytes=$(echo "${fio_return_value}" | jq -r '."out-data"' | sed -E "s|^\s*?WRITE: bw=.*?, io=([0-9]+)MiB \(([0-9]+)MB\),.*$|\2|g")
+    fio_written_data_mebibytes=$(echo "${fio_return_value}" | jq -r '."out-data"' | grep -A1 "Disk stats (read/write):" | tail -n1 | sed -E "s|^\s*?WRITE: bw=.*?, io=([0-9]+)MiB \(([0-9]+)MB\),.*$|\1|g")
+    fio_written_data_megabytes=$(echo "${fio_return_value}" | jq -r '."out-data"' | grep -A1 "Disk stats (read/write):" | tail -n1 | sed -E "s|^\s*?WRITE: bw=.*?, io=([0-9]+)MiB \(([0-9]+)MB\),.*$|\2|g")
 
     fio_written_data_bytes=$(convert_megabytes_to_bytes "${fio_written_data_megabytes}")
     fio_written_data_gigabytes=$(convert_bytes_to_gigabytes "${fio_written_data_bytes}")
