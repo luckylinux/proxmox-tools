@@ -586,7 +586,7 @@ get_io_statistics_write_bytes() {
 # Force Guest to write every pending Transaction to Disk
 sync_writes_guest() {
     # Echo
-    echo "Force Guest to write every pending Transaction to Disk using `sync`"
+    echo "Force Guest to write every pending Transaction to Disk using <sync> Command"
 
     # Run Command
     run_command_inside_vm "sync" > /dev/null 2>&1
@@ -598,7 +598,7 @@ sync_writes_guest() {
 # Force Host to write every pending Transaction to Disk
 sync_writes_host() {
     # Echo
-    echo "Force Host to write every pending Transaction to Disk using `sync`"
+    echo "Force Host to write every pending Transaction to Disk using <sync> Command"
 
     # Run Command
     sync
