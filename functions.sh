@@ -485,7 +485,7 @@ sync_writes_guest() {
     echo "Force Guest to write every pending Transaction to Disk using `sync`"
 
     # Run Command
-    run_command_inside_vm "sync"
+    run_command_inside_vm "sync" > /dev/null 2>&1
 
     # Wait a bit
     sleep 5
