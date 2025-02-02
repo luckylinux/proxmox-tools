@@ -825,6 +825,9 @@ save_all_host_info() {
     # Define Base Folder Automatically
     lbasefolder="${BENCHMARK_RESULTS_FOLDER}/${batch_counter}/host/${ltag}"
 
+    # Echo
+    echo "Save all HOST Information"
+
     # Create Folders if not existing yet
     mkdir -p "${lbasefolder}"
 
@@ -864,6 +867,9 @@ save_all_guest_info() {
 
     # Define Base Folder Automatically
     lbasefolder="${BENCHMARK_RESULTS_FOLDER}/${batch_counter}/guest/${ltag}"
+
+    # Echo
+    echo "Save all GUEST Information"
 
     # Create Folders if not existing yet
     mkdir -p "${lbasefolder}"
@@ -914,11 +920,17 @@ run_test_iteration() {
     # Save All GUEST Filesystem Properties
     save_all_guest_info "setup"
 
+    # Echo
+    echo -e "Force Write every pending Transaction to Disk"
+
     # Force Guest to write every pending Transaction to Disk
     sync_writes_guest
 
     # Force Host to write every pending Transaction to Disk
     sync_writes_host
+
+    # Vertical Spacing
+    echo -e "\n\n"
 
     # Init Test
     # (ONLY if **NOT** using a Separate Device)
@@ -989,14 +1001,16 @@ run_test_iteration() {
     then
         # Run Benchmark and store Return Value in Variable
         cmd_string=$(random_io "${fio_block_size}" "${fio_queue_depth}")
-        echo "Running Command String: ${cmd_string}"
+        echo -e "Running Command String: ${cmd_string}"
+        echo -e "\n\n"
         # run_command_inside_vm "${cmd_string}"
         fio_return_value=$(run_command_inside_vm "${cmd_string}")
     elif [[ "${fio_test_type}" == "throughput" ]]
     then
         # Run Benchmark and store Return Value in Variable
         cmd_string=$(throughput_io "${fio_block_size}" "${fio_queue_depth}")
-        echo "Running Command String: ${cmd_string}"
+        echo -e "Running Command String: ${cmd_string}"
+        echo -e "\n\n"
         # run_command_inside_vm "${cmd_string}"
         fio_return_value=$(run_command_inside_vm "${cmd_string}")
     else
