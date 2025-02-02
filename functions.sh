@@ -725,14 +725,11 @@ run_test_iteration() {
     device_guest="${BENCHMARK_VM_TEST_DEVICE}"
     device_guest_short=$(echo "${BENCHMARK_VM_TEST_DEVICE}" | sed -E "s|^.*?/([a-zA-Z0-9_-]+)|\1|g")
 
-    
-
     # Create Folders if not existing yet
     mkdir -p "${BENCHMARK_RESULTS_FOLDER}/${batch_counter}"
     mkdir -p "${BENCHMARK_RESULTS_FOLDER}/${batch_counter}/host"
     mkdir -p "${BENCHMARK_RESULTS_FOLDER}/${batch_counter}/guest"
-    # mkdir -p "${BENCHMARK_RESULTS_FOLDER}/${batch_counter}/guest/${device_guest_short}"
-    
+
     # Vertical Space
     echo -e "\n\n"
 
