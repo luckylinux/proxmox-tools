@@ -428,6 +428,9 @@ analyse_host_devices() {
 
    for device in "${BENCHMARK_HOST_DEVICES[@]}"
    do
+       # Echo
+       echo -e "\tAnalyse Device ${device}"
+
        # Get Value using Linux Kernel Statistics
        write_bytes_stat=$(get_io_statistics_write_bytes "${device}" "local")
 
@@ -441,8 +444,8 @@ analyse_host_devices() {
        if [[ ${write_bytes_smart} -lt 0 ]]
        then
            # Echo
-           echo -e "\tWARNING: SMART Data for ${device} is NOT Valid (${write_bytes_smart})"
-           echo -e "\tWARNING: Setting write_bytes_smart=\${write_bytes_stat}=${write_bytes_stat} (using the same data as <stat>)"
+           echo -e "\t\tWARNING: SMART Data for ${device} is NOT Valid (${write_bytes_smart})"
+           echo -e "\t\tWARNING: Setting write_bytes_smart=\${write_bytes_stat}=${write_bytes_stat} (using the same data as <stat>)"
 
            # Use the same Value as <stat>
            write_bytes_smart="${write_bytes_stat}"
@@ -459,10 +462,13 @@ analyse_host_devices() {
        lreturnarray_smart+=("${write_bytes_smart}")
 
        # Echo
-       echo "[HOST] Write Bytes for Device using Linux Kernel Statistics for ${device}: ${write_bytes_stat} B (${write_gigabytes_stat} GB)"
+       echo -e "\t\t[HOST] Write Bytes for Device using Linux Kernel Statistics for ${device}: ${write_bytes_stat} B (${write_gigabytes_stat} GB)"
 
        # Echo
-       echo "[HOST] Write Bytes for Device using smartmontools for ${device}: ${write_bytes_smart} B (${write_gigabytes_smart} GB)"
+       echo -e "\t\t[HOST] Write Bytes for Device using smartmontools for ${device}: ${write_bytes_smart} B (${write_gigabytes_smart} GB)"
+
+       # Echo
+       echo -e "\n\n"
    done
 }
 
