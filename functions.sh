@@ -254,7 +254,7 @@ get_io_statistics() {
     if [[ "${lmode}" == "local" ]]
     then
         # Echo for Debug
-        echo -e "\t\tChecking ${ldev}"
+        echo -e "\t\tChecking ${ldev} in LOCAL Mode" >> "${BENCHMARK_LOGFILE}"
 
         if [[ "${ldev}" == "/dev/disk/by-id/"* ]] || [[ "${ldev}" == "/dev/mapper/"* ]] || [[ "${ldev}" == "/dev/loop/"* ]]
         then       
@@ -269,6 +269,9 @@ get_io_statistics() {
         fi
     elif [[ "${lmode}" == "remote" ]]
     then
+       # Echo for Debug
+       echo -e "\t\tChecking ${ldev} in REMOTE Mode" >> "${BENCHMARK_LOGFILE}"
+
        # Define Command String to run in VM
        # lcmd_string="ldev=$(basename $(readlink --canonicalize \"\${ldev}\"); if [[ -e \"/sys/block/${ldev}\" ]]; then cat \"/sys/block/${ldev}/stat\"); fi"
        lcmd_string="ldev=\"${ldev}\"; if [[ -L \"\${ldev}\" ]]; then ldev=\$(basename \$(readlink --canonicalize \"\${ldev}\")); fi; if [[ -e \"/sys/block/\${ldev}\" ]]; then cat \"/sys/block/\${ldev}/stat\"; fi"

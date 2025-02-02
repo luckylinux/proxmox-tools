@@ -27,6 +27,9 @@ BENCHMARK_TIMESTAMP=$(date +"%Y%m%d-%H%M%S")
 # Folder where to save Information about the Original ZVOL
 BENCHMARK_RESULTS_FOLDER="${toolpath}/data/${BENCHMARK_TIMESTAMP}"
 
+# Log File
+BENCHMARK_LOGFILE="${BENCHMARK_RESULTS_FOLDER}/debug.log"
+
 # Guest ID
 BENCHMARK_VM_ID=""
 
