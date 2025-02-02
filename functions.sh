@@ -466,25 +466,28 @@ analyse_host_devices() {
    # Echo
    echo "Analyse Host Devices"
 
-   for device in "${BENCHMARK_HOST_DEVICES[@]}"
+   # Predeclare Variables
+   local ldevice
+
+   for ldevice in "${BENCHMARK_HOST_DEVICES[@]}"
    do
        # Echo
-       echo -e "\tAnalyse Device ${device}"
+       echo -e "\t[HOST] Analyse Device ${ldevice}"
 
        # Get Value using Linux Kernel Statistics
-       write_bytes_stat=$(get_io_statistics_write_bytes "${device}" "local")
+       write_bytes_stat=$(get_io_statistics_write_bytes "${ldevice}" "local")
 
        # Convert to gigabytes
        write_gigabytes_stat=$(convert_bytes_to_gigabytes "${write_bytes_stat}")
 
        # Get Value using Smartmontools
-       write_bytes_smart=$(get_smart_written_bytes "${device}")
+       write_bytes_smart=$(get_smart_written_bytes "${ldevice}")
 
        # If Data is not available, put the same Data as <stat>
        if [[ ${write_bytes_smart} -lt 0 ]]
        then
            # Echo
-           echo -e "\t\tWARNING: SMART Data for ${device} is NOT Valid (${write_bytes_smart})"
+           echo -e "\t\tWARNING: SMART Data for ${ldevice} is NOT Valid (${write_bytes_smart})"
            echo -e "\t\tWARNING: Setting write_bytes_smart=\${write_bytes_stat}=${write_bytes_stat} (using the same data as <stat>)"
 
            # Use the same Value as <stat>
@@ -502,10 +505,10 @@ analyse_host_devices() {
        lreturnarray_smart+=("${write_bytes_smart}")
 
        # Echo
-       echo -e "\t\t[HOST] Write Bytes for Device using Linux Kernel Statistics for ${device}: ${write_bytes_stat} B (${write_gigabytes_stat} GB)"
+       echo -e "\t\tWrite Bytes for Device using Linux Kernel Statistics for ${device}: ${write_bytes_stat} B (${write_gigabytes_stat} GB)"
 
        # Echo
-       echo -e "\t\t[HOST] Write Bytes for Device using smartmontools for ${device}: ${write_bytes_smart} B (${write_gigabytes_smart} GB)"
+       echo -e "\t\tWrite Bytes for Device using smartmontools for ${device}: ${write_bytes_smart} B (${write_gigabytes_smart} GB)"
 
        # Echo
        echo -e "\n\n"
@@ -529,6 +532,9 @@ analyse_guest_device() {
 
    #for device in "${BENCHMARK_VM_TEST_DEVICE[@]}"
    #do
+       # Echo
+       echo -e "\t[GUEST] Analyse Device ${ldevice}"
+
        # Test Standalone Command to see what's happening
        # get_io_statistics "${ldevice}" "remote"
 
@@ -542,7 +548,7 @@ analyse_guest_device() {
        lreturnarray+=("${write_bytes}")
 
        # Echo
-       echo "[GUEST] Write Bytes for Device ${device}: ${write_bytes} B (${write_gigabytes} GB)"
+       echo -e "\tWrite Bytes for Device ${ldevice}: ${write_bytes} B (${write_gigabytes} GB)"
    #done
 }
 
