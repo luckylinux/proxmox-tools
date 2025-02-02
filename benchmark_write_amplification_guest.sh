@@ -24,5 +24,15 @@ fi
 # Create Results Folder if not exist yet
 mkdir -p "${BENCHMARK_RESULTS_FOLDER}"
 
+# Create easy Symlink
+parent_folder=$(dirname "${BENCHMARK_RESULTS_FOLDER}")
+if [[ -L "${parent_folder}/latest" ]]
+    # Remote existing Link
+    rm "${parent_folder}/latest"
+fi
+
+# Create new Symlink
+ln -s "${BENCHMARK_RESULTS_FOLDER}" "${parent_folder}/latest"
+
 # Run Test Batch
 run_test_batch
