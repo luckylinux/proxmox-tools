@@ -424,7 +424,7 @@ get_io_statistics() {
         # Debug
         echo -e "\t\tChecking ${ldev} in LOCAL Mode" >> "${BENCHMARK_LOGFILE}"
 
-        if [[ "${ldev}" == "/dev/disk/by-id/"* ]] || [[ "${ldev}" == "/dev/mapper/"* ]] || [[ "${ldev}" == "/dev/loop/"* ]]
+        if [[ "${ldev}" == "/dev/disk/by-id/"* ]] || [[ "${ldev}" == "/dev/mapper/"* ]] || [[ "${ldev}" == "/dev/loop/"* ]] || [[ "${ldev}" == "/dev/zvol/"* ]]
         then      
             # Debug
             echo -e "\t\tGet short Name for ${ldev} in LOCAL Mode" >> "${BENCHMARK_LOGFILE}"
@@ -677,9 +677,14 @@ analyse_host_zvol() {
 
    # Predeclare Variables
    local lzvol
+   # local lzvoldevname
 
    # Set ZVOL to Virtual Disk
-   lzvol="${BENCHMARK_VM_VIRTUAL_DISK}"
+   lzvol="/dev/zvol/${BENCHMARK_VM_VIRTUAL_DISK}"
+
+   # Get ZVOL Device Name
+   # (not needed, already taken care by get_io_statistics)
+   # lzvoldevname=$(basename $(readlink "${lzvol}"))
 
    #for lzvol in "${BENCHMARK_HOST_DEVICES[@]}"
    #do
