@@ -678,9 +678,16 @@ save_all_host_info() {
         # Create Folders if not existing yet
         mkdir -p "${lbasefolder}/${device_host_short}"
 
-        # Save HOST Smart Data (ALL)
-        smartctl -A "${device_host}" >> "${lbasefolder}/${device_host_short}/smartctl.info"
-        smartctl -a "${device_host}" >> "${lbasefolder}/${device_host_short}/smartctl.attributes"
+        # Only run Smartctl for Physical Devices
+        device_host_type=$(lsblk --nodeps --noheadings --paths --list --output TYPE "${device_host}")
+
+        # if [[ "${ldev}" == "/dev/disk/by-id/"* ]]
+        if [[ "${device_host_type}" == "disk" ]]
+        then
+            # Save HOST Smart Data (ALL)
+            smartctl -A "${device_host}" >> "${lbasefolder}/${device_host_short}/smartctl.info"
+            smartctl -a "${device_host}" >> "${lbasefolder}/${device_host_short}/smartctl.attributes"
+        fi
     done
 }
 
