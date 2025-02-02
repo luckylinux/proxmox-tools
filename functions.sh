@@ -253,18 +253,29 @@ get_io_statistics() {
 
     if [[ "${lmode}" == "local" ]]
     then
-        # Echo for Debug
+        # Debug
         echo -e "\t\tChecking ${ldev} in LOCAL Mode" >> "${BENCHMARK_LOGFILE}"
 
         if [[ "${ldev}" == "/dev/disk/by-id/"* ]] || [[ "${ldev}" == "/dev/mapper/"* ]] || [[ "${ldev}" == "/dev/loop/"* ]]
-        then       
+        then      
+            # Debug
+            echo -e "\t\tGet short Name for ${ldev} in LOCAL Mode" >> "${BENCHMARK_LOGFILE}"
+
             # Get the simplified Name that we can look in /sys/block/<dev>/stat
             ldev=$(basename "$(readlink \"${ldev}\")")
+
+            # Debug
+            echo -e "\t\tShort Name resolved to ${ldev} in LOCAL Mode" >> "${BENCHMARK_LOGFILE}"
         fi
 
         # Return Value
         if [[ -e "/sys/block/${ldev}" ]]
         then
+            # Debug
+            echo -e "\t\tStatistics for ${ldev} in LOCAL Mode:" >> "${BENCHMARK_LOGFILE}"
+            cat "/sys/block/${ldev}/stat" >> "${BENCHMARK_LOGFILE}"
+
+            # Return Value
             cat "/sys/block/${ldev}/stat"
         fi
     elif [[ "${lmode}" == "remote" ]]
