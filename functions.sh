@@ -1273,15 +1273,15 @@ run_test_iteration() {
         # Determine Local Log File
         batch_result_logfile_local="${BENCHMARK_RESULTS_FOLDER}/${batch_counter}/${device_host_short}.csv"        
 
+        # Get Header String from Array
+        batch_header_string=$(join_array "," ${batch_result_headers[*]})
+
         # Write Headers to Local Log File in CSV Format
         echo "#${batch_header_string}" >> "${batch_result_logfile_local}"
 
         # Write Headers to Global Log File in CSV Format
         if [[ ! -f "${batch_result_logfile_global}" ]]
         then
-            # Get Header String from Array
-            batch_header_string=$(join_array "," ${batch_result_headers[*]})
-
             # Write Headers to File
             echo "#${batch_header_string}" >> "${batch_result_logfile_global}"
 
