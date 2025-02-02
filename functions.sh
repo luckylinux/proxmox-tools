@@ -12,6 +12,23 @@ source "${toolpath}/config.sh"
 # shellcheck source=./constants.sh
 source "${toolpath}/constants.sh"
 
+# Math Calculation
+math_calculation() {
+    # Input Arguments
+    local lmathexpression="$1"
+
+    # Compute Result
+    local lbcresult
+    lbcresult=$(echo "scale=3; ${lmathexpression}" | bc)
+
+    # Strip Thousands Separator
+    local lresult
+    lresult=$(echo "${lbcresult}" | sed -E "s|,||g")
+
+    # Return Value
+    echo "${lresult}"
+}
+
 # Repeat Character N times
 repeat_character() {
    # Character to repeat
@@ -172,7 +189,7 @@ convert_gigabytes_to_bytes() {
 
    # Convert gigabytes -> bytes
    local lbytes
-   lbytes=$(echo "scale=3; ${lgigabytes} * ${BYTES_PER_GB}" | bc)
+   lbytes=$(math_calculation "${lgigabytes} * ${BYTES_PER_GB}")
 
    # Return Value
    echo "${lbytes}" | sed ':a;s/\B[0-9]\{3\}\>/,&/;ta'
@@ -186,7 +203,7 @@ convert_bytes_to_gigabytes() {
 
    # Convert bytes -> gigabytes
    local lgigabytes
-   lgigabytes=$(echo "scale=3; ${lbytes} / ${BYTES_PER_GB}" | bc)
+   lgigabytes=$(math_calculation "${lbytes} / ${BYTES_PER_GB}")
 
    # Return Value
    echo "${lgigabytes}" | sed ':a;s/\B[0-9]\{3\}\>/,&/;ta'
@@ -225,12 +242,12 @@ get_smart_written_bytes() {
        # echo "LBA Size: ${lba_size}"
 
        # Convert LBAs -> bytes
-       bytes_written=$(echo "${lbas_written} * ${lba_size}" | bc)
+       bytes_written=$(math_calculation "${lbas_written} * ${lba_size}")
 
        # Convert into bigger Units
-       # megabytes_written=$(echo "scale=3; ${bytes_written} / ${BYTES_PER_MB}" | bc)
-       # gigabytes_written=$(echo "scale=3; ${bytes_written} / ${BYTES_PER_GB}" | bc)
-       # terabytes_written=$(echo "scale=3; ${bytes_written} / ${BYTES_PER_TB}" | bc)
+       # megabytes_written=$(math_calculation "${bytes_written} / ${BYTES_PER_MB}")
+       # gigabytes_written=$(math_calculation "${bytes_written} / ${BYTES_PER_GB}")
+       # terabytes_written=$(math_calculation "${bytes_written} / ${BYTES_PER_TB}")
 
        # Return Value
        echo "${bytes_written}"
@@ -405,8 +422,14 @@ get_io_statistics_write_bytes() {
    # Get Number of Sectors written
    sectors=$(get_io_statistics_write_sectors "${ldev}" "${lmode}")
 
+   # Value in Bytes
+   local lbytes
+
    # Calculate Bytes Value
-   echo "${sectors} * 512" | bc
+   lbytes=$(math_calculation "${sectors} * 512")
+
+   # Return Value
+   echo "${lbytes}"
 }
 
 # Force Guest to write every pending Transaction to Disk
@@ -702,7 +725,7 @@ run_test_iteration() {
     after_value_guest=${write_bytes_guest_after_test[0]}
 
     # Delta
-    delta_value_guest=$(echo "scale=3; ${after_value_guest} - ${before_value_guest}" | bc)
+    delta_value_guest=$(math_calculation "${after_value_guest} - ${before_value_guest}")
 
     # Convert into GB
     before_value_guest_gigabytes=$(convert_bytes_to_gigabytes ${before_value_guest})
@@ -729,10 +752,10 @@ run_test_iteration() {
         after_value_stat_host=${write_bytes_stat_host_after_test[${index}]}
 
         # Delta (stat)
-        delta_value_stat_host=$(echo "scale=3; ${after_value_stat_host} - ${before_value_stat_host}" | bc)
+        delta_value_stat_host=$(math_calculation "${after_value_stat_host} - ${before_value_stat_host}")
 
         # Calculate Write Amplification (stat)
-        write_amplification_factor_stat=$(echo "scale=3; ${delta_value_stat_host} / ${delta_value_guest}" | bc)
+        write_amplification_factor_stat=$(math_calculation "${delta_value_stat_host} / ${delta_value_guest}")
 
         # Convert into GB
         before_value_stat_host_gigabytes=$(convert_bytes_to_gigabytes ${before_value_stat_host})
@@ -747,10 +770,10 @@ run_test_iteration() {
         after_value_smart_host=${write_bytes_smart_host_after_test[${index}]}
 
         # Delta (stat)
-        delta_value_smart_host=$(echo "scale=3; ${after_value_smart_host} - ${before_value_smart_host}" | bc)
+        delta_value_smart_host=$(math_calculation "${after_value_smart_host} - ${before_value_smart_host}")
 
         # Calculate Write Amplification (smart)
-        write_amplification_factor_smart=$(echo "scale=3; ${delta_value_smart_host} / ${delta_value_guest}" | bc)
+        write_amplification_factor_smart=$(math_calculation "${delta_value_smart_host} / ${delta_value_guest}")
 
         # Convert into GB
         before_value_smart_host_gigabytes=$(convert_bytes_to_gigabytes ${before_value_smart_host})
@@ -760,16 +783,17 @@ run_test_iteration() {
 
 
         # Echo
-        echo -e "Write Amplification from GUEST to HOST [${device_host}] using stat: ${write_amplification_factor_stat}"
-        echo -e "\tValue before Benchmark on HOST [${device_host}]: ${before_value_stat_host} B (${before_value_stat_host_gigabytes} GB)"
-        echo -e "\tValue after Benchmark on HOST [${device_host}]: ${after_value_stat_host} B (${after_value_stat_host_gigabytes} GB)"
-        echo -e "\tValue difference Benchmark on HOST [${device_host}]: ${delta_value_stat_host} B (${delta_value_stat_host_gigabytes} GB)"
+        echo -e "Write Amplification from GUEST to HOST for Device ${device_host}"
+        
+        echo -e "\tUsing stat: ${write_amplification_factor_stat}"
+        echo -e "\t\tValue before Benchmark on HOST: ${before_value_stat_host} B (${before_value_stat_host_gigabytes} GB)"
+        echo -e "\t\tValue after Benchmark on HOST: ${after_value_stat_host} B (${after_value_stat_host_gigabytes} GB)"
+        echo -e "\t\tValue difference Benchmark on HOST: ${delta_value_stat_host} B (${delta_value_stat_host_gigabytes} GB)"
 
-        # Echo
-        echo -e "Write Amplification from GUEST to HOST [${device_host}] using smartmontools: ${write_amplification_factor_smart}"
-        echo -e "\tValue before Benchmark on HOST [${device_host}]: ${before_value_smart_host} B (${before_value_smart_host_gigabytes} GB)"
-        echo -e "\tValue after Benchmark on HOST [${device_host}]: ${after_value_smart_host} B (${after_value_smart_host_gigabytes} GB)"
-        echo -e "\tValue difference Benchmark on HOST [${device_host}]: ${delta_value_smart_host} B (${delta_value_smart_host_gigabytes} GB)"
+        echo -e "\tUsing smartmontools: ${write_amplification_factor_smart}"
+        echo -e "\t\tValue before Benchmark on HOST: ${before_value_smart_host} B (${before_value_smart_host_gigabytes} GB)"
+        echo -e "\t\tValue after Benchmark on HOST: ${after_value_smart_host} B (${after_value_smart_host_gigabytes} GB)"
+        echo -e "\t\tValue difference Benchmark on HOST: ${delta_value_smart_host} B (${delta_value_smart_host_gigabytes} GB)"
 
 
         # Define device_guest for logging
