@@ -200,6 +200,43 @@ init_guest_test() {
     fi
 }
 
+# Get Raw Number in Bytes
+get_bytes_number() {
+    # Input Arguments
+    local lformattedsize="$1"
+
+    # Define Local Variables
+    local lresult
+    local lvalue
+
+    # Strip the Unit
+    lvalue=$("${lformattedsize:0:-1}")
+
+    if [[ "${lformattedsize: -1}" == "K" ]]
+    then
+        # Convert Kilobytes to Bytes
+        lresult=$(convert_kilobytes_to_bytes "${lvalue}")
+    elif [[ "${lformattedsize: -1}" == "M" ]]
+    then
+        # Convert Megabytes to Bytes
+        lresult=$(convert_megabytes_to_bytes "${lvalue}")
+    elif [[ "${lformattedsize: -1}" == "G" ]]
+    then
+        # Convert Gigabytes to Bytes
+        lresult=$(convert_gigabytes_to_bytes "${lvalue}")
+    elif [[ "${lformattedsize: -1}" == "T" ]]
+    then
+        # Convert Terabytes to Bytes
+        lresult=$(convert_terabytes_to_bytes "${lvalue}")
+    else
+        # Just use the Value as Bytes
+        lresult="${lformattedsize}"
+    fi
+
+    # Return Value
+    return "${lresult}"
+}
+
 # Random IO Test Function
 random_io() {
     # Input Arguments
@@ -209,8 +246,17 @@ random_io() {
     # Constant
     local lsize="${BENCHMARK_VM_DEFAULT_SIZE}"
 
-    # Test Command
-    echo "sudo fio --name=write_iops --directory=\"${BENCHMARK_VM_TEST_PATH}\" --size=\"${lsize}\" --runtime=600s --ramp_time=2s --ioengine=libaio --direct=1 --verify=0 --bs=\"${lblocksize}\" --iodepth=\"${lqueuedepth}\" --rw=randwrite --group_reporting=1"
+    # Declare Local Variables
+    local lnumfiles
+
+    # Calculated
+    
+
+    # Return Command Line (write ONE BIG FILE)
+    # echo "sudo fio --name=write_iops --directory=\"${BENCHMARK_VM_TEST_PATH}\" --size=\"${lsize}\" --runtime=600s --ramp_time=2s --ioengine=libaio --direct=1 --verify=0 --bs=\"${lblocksize}\" --iodepth=\"${lqueuedepth}\" --rw=randwrite --group_reporting=1"
+
+    # Return Command Line (write LOTS OF SMALL FILES)
+    echo "sudo fio --name=write_iops --directory=\"${BENCHMARK_VM_TEST_PATH}\" --size=\"${lsize}\" --openfiles=512 --nrfiles=\"${lnumfiles}\" --cpus_allowed=0 --runtime=600s --ramp_time=2s --ioengine=libaio --direct=1 --buffered=0 --verify=0 --bs=\"${lblocksize}\" --iodepth=\"${lqueuedepth}\" --rw=randwrite --group_reporting=1"
 }
 
 # Throuput Test Function
@@ -226,6 +272,32 @@ throughput_io() {
     echo "sudo fio --name=write_throughput --directory=\"${BENCHMARK_VM_TEST_PATH}\" --numjobs=16 --size=\"${lsize}\" --runtime=600s --ramp_time=2s --ioengine=libaio --direct=1 --verify=0 --bs=\"${lblocksize}\" --iodepth=\"${lqueuedepth}\" --rw=write --group_reporting=1"
 }
 
+# Convert Kilobytes to Bytes
+convert_kilobytes_to_bytes() {
+   # Input Arguments
+   local lkilobytes="$1"
+
+   # Convert kilobytes -> bytes
+   local lbytes
+   lbytes=$(math_calculation "${lkilobytes} * ${BYTES_PER_KB}")
+
+   # Return Value
+   echo "${lbytes}"
+}
+
+# Convert Megabytes to Bytes
+convert_megabytes_to_bytes() {
+   # Input Arguments
+   local lmegabytes="$1"
+
+   # Convert gigabytes -> bytes
+   local lbytes
+   lbytes=$(math_calculation "${lmegabytes} * ${BYTES_PER_MB}")
+
+   # Return Value
+   echo "${lbytes}"
+}
+
 # Convert Gigabytes to Bytes
 convert_gigabytes_to_bytes() {
    # Input Arguments
@@ -236,8 +308,20 @@ convert_gigabytes_to_bytes() {
    lbytes=$(math_calculation "${lgigabytes} * ${BYTES_PER_GB}")
 
    # Return Value
-   echo "${lbytes}" | sed ':a;s/\B[0-9]\{3\}\>/,&/;ta'
+   echo "${lbytes}"
+}
 
+# Convert Terabytes to Bytes
+convert_terabytes_to_bytes() {
+   # Input Arguments
+   local lterabytes="$1"
+
+   # Convert terabytes -> bytes
+   local lbytes
+   lbytes=$(math_calculation "${lterabytes} * ${BYTES_PER_TB}")
+
+   # Return Value
+   echo "${lbytes}"
 }
 
 # Convert Bytes to Gigabytes
@@ -573,6 +657,9 @@ analyse_guest_device() {
 
    # Echo
    echo "Analyse Guest Device"
+
+   # On the Guest it's also possible to get the Value in GB directly using
+   # cat /sys/block/sdb/stat | awk '{print $7*512/1024/1024/1024}'
 
    # Define Device
    local ldevice="${BENCHMARK_VM_TEST_DEVICE}"
