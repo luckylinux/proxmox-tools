@@ -779,15 +779,6 @@ run_test_iteration() {
     guest_device_physical_block_size_return_value=$(run_command_inside_vm "blockdev --getpbsz \"${device_guest}\"")
     guest_device_physical_block_size=$(echo "${guest_device_physical_block_size_return_value}" | jq -r '."out-data"')
 
-    # Get HOST Block Size
-    host_device_block_size=$(blockdev --getbsz "${device_host}")
-
-    # Get HOST Logical Block (Sector) Size
-    host_device_physical_block_size=$(blockdev --getss "${device_host}")
-
-    # Get HOST Physical Block (Sector) Size
-    host_device_physical_block_size=$(blockdev --getpbsz "${device_host}")
-
     # Save All HOST Information
     save_all_host_info "before"
     
@@ -898,6 +889,15 @@ run_test_iteration() {
         # Compute Short Name for Host Device
         device_host_short=$(basename "${device_host}")
 
+        # Get HOST Device Block Size
+        host_device_block_size=$(blockdev --getbsz "${device_host}")
+
+        # Get HOST Device Logical Block (Sector) Size
+        host_device_logical_block_size=$(blockdev --getss "${device_host}")
+
+        # Get HOST Device Physical Block (Sector) Size
+        host_device_physical_block_size=$(blockdev --getpbsz "${device_host}")
+
         # Before (stat)
         before_value_stat_host=${write_bytes_stat_host_before_test[${index}]}
 
@@ -964,7 +964,7 @@ run_test_iteration() {
         batch_result_headers+=("fio_queue_depth")
 
         batch_result_headers+=("host_device_block_size")
-        batch_result_headers+=("host_device_physical_block_size")
+        batch_result_headers+=("host_device_logical_block_size")
         batch_result_headers+=("host_device_physical_block_size")
 
         batch_result_headers+=("guest_device_block_size")
