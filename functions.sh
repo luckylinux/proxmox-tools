@@ -133,10 +133,12 @@ run_command_inside_vm() {
     # Declare Variable for qm guest exec Return Code
     local lreturncode
     local lattemptscounter
+    local cmd_returned_value
 
     # Initialize Variables
     lreturncode=255
     lattemptscounter=1
+    cmd_returned_value=""
 
     # Keep Trying until it works
     # 255 is the Return Code for "QEMU guest agent is not running"
@@ -144,9 +146,6 @@ run_command_inside_vm() {
     do
         # Debug
         echo -e "\t\t(Attempt ${lattemptscounter})Running Command ${lcmd} inside VM" >> "${BENCHMARK_LOGFILE}"
-
-        # Run Command inside VM
-        local cmd_returned_value
     
         # Suppress Output (no Command Output will ever be Obtained !!!)
         # cmd_returned_value=$(qm guest exec "${BENCHMARK_VM_ID}" --timeout 0 -- /bin/bash -c "${lcmd} > /dev/null 2>&1")
@@ -236,7 +235,10 @@ convert_bytes_to_gigabytes() {
    lgigabytes=$(math_calculation "${lbytes} / ${BYTES_PER_GB}")
 
    # Return Value
-   echo "${lgigabytes}" | sed ':a;s/\B[0-9]\{3\}\>/,&/;ta'
+   # echo "${lgigabytes}" | sed ':a;s/\B[0-9]\{3\}\>/,&/;ta'
+
+   # Return Value
+   echo "${lgigabytes}"
 }
 
 # Get Smartctl LBA Written Bytes Data
@@ -578,7 +580,7 @@ analyse_guest_device() {
        lreturnarray+=("${write_bytes}")
 
        # Echo
-       echo -e "\tWrite Bytes for Device ${ldevice}: ${write_bytes} B (${write_gigabytes} GB)"
+       echo -e "\t\tWrite Bytes for Device ${ldevice}: ${write_bytes} B (${write_gigabytes} GB)"
    #done
 }
 
@@ -718,11 +720,16 @@ run_test_iteration() {
     # Get Returned Value
     echo "${fio_return_value}" | jq -r '."out-data"'
 
+    # Kill all possible remaining <fio> Processes
+    run_command_inside_vm "killall fio"
+    run_command_inside_vm "killall fio"
+    run_command_inside_vm "killall fio"
+
     # Force Guest to write every pending Transaction to Disk
-    cmd_return_value=$(sync_writes_guest)
+    sync_writes_guest
 
     # Force Host to write every pending Transaction to Disk
-    cmd_return_value=$(sync_writes_host)
+    sync_writes_host
 
     # Vertical Space
     echo -e "\n\n"
@@ -764,9 +771,9 @@ run_test_iteration() {
     delta_value_guest=$(math_calculation "${after_value_guest} - ${before_value_guest}")
 
     # Convert into GB
-    before_value_guest_gigabytes=$(convert_bytes_to_gigabytes ${before_value_guest})
-    after_value_guest_gigabytes=$(convert_bytes_to_gigabytes ${after_value_guest})
-    delta_value_guest_gigabytes=$(convert_bytes_to_gigabytes ${delta_value_guest})
+    before_value_guest_gigabytes=$(convert_bytes_to_gigabytes "${before_value_guest}")
+    after_value_guest_gigabytes=$(convert_bytes_to_gigabytes "${after_value_guest}")
+    delta_value_guest_gigabytes=$(convert_bytes_to_gigabytes "${delta_value_guest}")
 
     # Echo
     echo -e "Details of Data written on GUEST"
@@ -794,9 +801,9 @@ run_test_iteration() {
         write_amplification_factor_stat=$(math_calculation "${delta_value_stat_host} / ${delta_value_guest}")
 
         # Convert into GB
-        before_value_stat_host_gigabytes=$(convert_bytes_to_gigabytes ${before_value_stat_host})
-        after_value_stat_host_gigabytes=$(convert_bytes_to_gigabytes ${after_value_stat_host})
-        delta_value_stat_host_gigabytes=$(convert_bytes_to_gigabytes ${delta_value_stat_host})
+        before_value_stat_host_gigabytes=$(convert_bytes_to_gigabytes "${before_value_stat_host}")
+        after_value_stat_host_gigabytes=$(convert_bytes_to_gigabytes "${after_value_stat_host}")
+        delta_value_stat_host_gigabytes=$(convert_bytes_to_gigabytes "${delta_value_stat_host}")
 
 
         # Before (smart)
@@ -812,9 +819,9 @@ run_test_iteration() {
         write_amplification_factor_smart=$(math_calculation "${delta_value_smart_host} / ${delta_value_guest}")
 
         # Convert into GB
-        before_value_smart_host_gigabytes=$(convert_bytes_to_gigabytes ${before_value_smart_host})
-        after_value_smart_host_gigabytes=$(convert_bytes_to_gigabytes ${after_value_smart_host})
-        delta_value_smart_host_gigabytes=$(convert_bytes_to_gigabytes ${delta_value_smart_host})
+        before_value_smart_host_gigabytes=$(convert_bytes_to_gigabytes "${before_value_smart_host}")
+        after_value_smart_host_gigabytes=$(convert_bytes_to_gigabytes "${after_value_smart_host}")
+        delta_value_smart_host_gigabytes=$(convert_bytes_to_gigabytes "${delta_value_smart_host}")
 
 
 
