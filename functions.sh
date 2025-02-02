@@ -635,7 +635,7 @@ run_test_iteration() {
     after_value_guest=${write_bytes_guest_after_test[0]}
 
     # Delta
-    delta_value_guest=$((after_value_guest - before_value_guest))
+    delta_value_guest=$(echo "scale=3; ${after_value_guest} - ${before_value_guest}" | bc)
 
     # Convert into GB
     before_value_guest_gigabytes=$(convert_bytes_to_gigabytes ${before_value_guest})
@@ -662,7 +662,7 @@ run_test_iteration() {
         after_value_stat_host=${write_bytes_stat_host_after_test[${index}]}
 
         # Delta (stat)
-        delta_value_stat_host=$((after_value_stat_host - before_value_stat_host))
+        delta_value_stat_host=$(echo "scale=3; ${after_value_stat_host} - ${before_value_stat_host}" | bc)
 
         # Calculate Write Amplification (stat)
         write_amplification_factor_stat=$(echo "scale=3; ${delta_value_stat_host} / ${delta_value_guest}" | bc)
@@ -680,7 +680,7 @@ run_test_iteration() {
         after_value_smart_host=${write_bytes_smart_host_after_test[${index}]}
 
         # Delta (stat)
-        delta_value_smart_host=$((after_value_smart_host - before_value_smart_host))
+        delta_value_smart_host=$(echo "scale=3; ${after_value_smart_host} - ${before_value_smart_host}" | bc)
 
         # Calculate Write Amplification (smart)
         write_amplification_factor_smart=$(echo "scale=3; ${delta_value_smart_host} / ${delta_value_guest}" | bc)
