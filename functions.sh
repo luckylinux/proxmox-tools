@@ -1036,6 +1036,9 @@ run_test_iteration() {
         exit 9
     fi
 
+    # Save FIO Result to Log
+    echo "${fio_return_value}" | jq -r '."out-data"' >> "${BENCHMARK_RESULTS_FOLDER}/${batch_counter}/guest/fio.log"
+
     # Get Returned Value
     fio_written_data_mebibytes=$(echo "${fio_return_value}" | jq -r '."out-data"' | grep -A1 "Run status group" | tail -n1 | sed -E "s|^\s*?WRITE: bw=.*?, io=([0-9]+)MiB \(([0-9]+)MB\),.*$|\1|g")
     fio_written_data_megabytes=$(echo "${fio_return_value}" | jq -r '."out-data"' | grep -A1 "Run status group" | tail -n1 | sed -E "s|^\s*?WRITE: bw=.*?, io=([0-9]+)MiB \(([0-9]+)MB\),.*$|\2|g")
