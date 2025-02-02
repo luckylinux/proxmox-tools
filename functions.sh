@@ -259,11 +259,14 @@ random_io() {
     lnumfiles=$(math_calculation "${lrawsize} / ${lrawblocksize}")
     lnumfiles=$(echo "${lnumfiles}" | awk '{print int($1)}')
 
-    # Return Command Line (write ONE BIG FILE)
-    # echo "sudo fio --name=write_iops --directory=\"${BENCHMARK_VM_TEST_PATH}\" --size=\"${lsize}\" --runtime=600s --ramp_time=2s --ioengine=libaio --direct=1 --verify=0 --bs=\"${lblocksize}\" --iodepth=\"${lqueuedepth}\" --rw=randwrite --group_reporting=1"
-
-    # Return Command Line (write LOTS OF SMALL FILES)
-    echo "sudo fio --name=write_iops --directory=\"${BENCHMARK_VM_TEST_PATH}\" --size=\"${lsize}\" --openfiles=512 --nrfiles=\"${lnumfiles}\" --cpus_allowed=0 --runtime=600s --ramp_time=2s --ioengine=libaio --direct=1 --buffered=0 --verify=0 --bs=\"${lblocksize}\" --iodepth=\"${lqueuedepth}\" --rw=randwrite --group_reporting=1"
+    if [[ ${BENCHMARK_VM_DEFAULT_RANDOM_USE_SINGLE_BIG_FILE} -eq 1 ]]
+    then
+        # Return Command Line (write ONE BIG FILE)
+        echo "sudo fio --name=write_iops --directory=\"${BENCHMARK_VM_TEST_PATH}\" --size=\"${lsize}\" --runtime=600s --ramp_time=2s --ioengine=libaio --direct=1 --verify=0 --bs=\"${lblocksize}\" --iodepth=\"${lqueuedepth}\" --rw=randwrite --group_reporting=1"
+    else
+        # Return Command Line (write LOTS OF SMALL FILES)
+        echo "sudo fio --name=write_iops --directory=\"${BENCHMARK_VM_TEST_PATH}\" --size=\"${lsize}\" --openfiles=512 --nrfiles=\"${lnumfiles}\" --cpus_allowed=0 --runtime=600s --ramp_time=2s --ioengine=libaio --direct=1 --buffered=0 --verify=0 --bs=\"${lblocksize}\" --iodepth=\"${lqueuedepth}\" --rw=randwrite --group_reporting=1"
+    fi
 }
 
 # Throuput Test Function
