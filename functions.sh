@@ -210,7 +210,7 @@ get_bytes_number() {
     local lvalue
 
     # Strip the Unit
-    lvalue=$("${lformattedsize:0:-1}")
+    lvalue=$(echo "${lformattedsize:0:-1}")
 
     if [[ "${lformattedsize: -1}" == "K" ]]
     then
