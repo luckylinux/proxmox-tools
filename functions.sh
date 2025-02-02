@@ -535,10 +535,10 @@ analyse_host_devices() {
        lreturnarray_smart+=("${write_bytes_smart}")
 
        # Echo
-       echo -e "\t\tWrite Bytes for Device using Linux Kernel Statistics for ${device}: ${write_bytes_stat} B (${write_gigabytes_stat} GB)"
+       echo -e "\t\tWrite Bytes for Device using Linux Kernel Statistics for ${ldevice}: ${write_bytes_stat} B (${write_gigabytes_stat} GB)"
 
        # Echo
-       echo -e "\t\tWrite Bytes for Device using smartmontools for ${device}: ${write_bytes_smart} B (${write_gigabytes_smart} GB)"
+       echo -e "\t\tWrite Bytes for Device using smartmontools for ${ldevice}: ${write_bytes_smart} B (${write_gigabytes_smart} GB)"
 
        # Echo
        echo -e "\n\n"
