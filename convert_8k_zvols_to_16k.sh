@@ -146,7 +146,7 @@ do
         fi
 
         # Remove Previous ZVOL
-        zfs destroy "${zvol_old}"
+        # zfs destroy "${zvol_old}"
     else
         # Echo
         echo -e "\tNo Conversion Required"
