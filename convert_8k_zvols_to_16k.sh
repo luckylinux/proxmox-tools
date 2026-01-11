@@ -147,6 +147,16 @@ do
 
         # Remove Previous ZVOL
         # zfs destroy "${zvol_old}"
+
+        # Define Archive Name
+        zvol_name=$(echo "${zvol}" | basename $(cat /dev/stdin))
+        zvol_archive="rpool/old/8k/${zvol_name}"
+
+        # Echo
+        echo "Rename old ${volblocksize_human} Volume to ${zvol_archive}"
+
+        # Move to dedicated Dataset
+        zfs rename "${zvol_old}" "${zvol_archive}"
     else
         # Echo
         echo -e "\tNo Conversion Required"
