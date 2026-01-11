@@ -108,7 +108,7 @@ do
         zfs rename -f "${zvol}" "${zvol_old}"
 
         # Create new ZVOL
-        zfs create -V "${volsize}" -o volblocksize=16K "${zvol}"
+        zfs create -V "${volsize}" -o volblocksize=16K -o refreservation=none "${zvol}"
 
         # Copy the old Data into it
         if [[ "${PROGRAM_COPY_BLOCKS}" == "dd" ]]
