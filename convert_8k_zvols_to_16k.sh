@@ -11,6 +11,14 @@ set -e
 # shellcheck source=./config.sh
 source ${toolpath}/config.sh
 
+# Enable User override
+userchoice="$1"
+
+if [[ -z "${userchoice}" ]]
+then
+    read -p "Do you want to only convert a specific Volume ? Enter ZFS Volume Name or [ENTER] to convert everything: " userchoice
+fi
+
 # List ZVOLs
 # mapfile -t zvols < <( zfs get volblocksize -t volume )
 
@@ -18,7 +26,7 @@ source ${toolpath}/config.sh
 # mapfile -t zvols < <( zfs get volblocksize -o "name,value" -t volume -H )
 
 # List ZVOLs with name (grab volblocksize inside Loop)
-mapfile -t zvols < <( zfs get volblocksize -o "name" -t volume -H )
+mapfile -t zvols < <( zfs get volblocksize -o "name" -t volume -H | grep "${userchoice}" | grep -Eiv '_8K$' )
 
 # Generate Timestamp
 timestamp=$(date +"%Y%m%d-%H%M%S")
@@ -97,7 +105,7 @@ do
         fi
 
         # Rename ZVOL
-        zfs rename -u -f "${zvol}" "${zvol_old}"
+        zfs rename -f "${zvol}" "${zvol_old}"
 
         # Create new ZVOL
         zfs create -V "${volsize}" -o volblocksize=16K "${zvol}"
