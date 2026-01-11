@@ -114,6 +114,7 @@ do
         if [[ "${PROGRAM_COPY_BLOCKS}" == "dd" ]]
         then
             # Use dd
+            echo "For now the use of <dd> is not implemented"
 
             # Options conv=noerror,sync will keep going on read errors and can REALLY mess up the Result up to an entire Block Size (bs)
             # For this Reason, keep "bs" as default (512 = 512 bytes) to limit potential Damage to a Minimum
