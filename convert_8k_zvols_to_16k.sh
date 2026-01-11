@@ -104,6 +104,9 @@ do
             exit 9
         fi
 
+        # Snapshot current Volume
+        zfs snapshot -r "${zvol}@${timestamp}-convert-to-16k"
+
         # Rename ZVOL
         zfs rename -f "${zvol}" "${zvol_old}"
 
